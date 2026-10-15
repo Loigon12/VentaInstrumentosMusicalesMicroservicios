@@ -1,20 +1,22 @@
 package com.example.POCEmpleado.servicios;
 
+import com.example.POCEmpleado.model.AccesorioCuerda;
 import com.example.POCEmpleado.model.Instrumento;
 import com.example.POCEmpleado.model.InstrumentoInput;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class ServicioInstrumento {
-    private static List<Instrumento>  instrumentos = new ArrayList<>();
+    private static List<Instrumento> instrumentos = new ArrayList<>();
 
-    public static List<Instrumento> listarInstrumentos(){
+    public static List<Instrumento> listarInstrumentos() {
         return List.copyOf(instrumentos);
     }
 
-    public static List<Instrumento> listarInstrumentos(String nombre, Double precioMaximo){
+    public static List<Instrumento> listarInstrumentos(String nombre, Double precioMaximo) {
         return instrumentos.stream()
                 .filter(instrumento -> nombre == null || nombre.isBlank()
                         || instrumento.getNombre().toLowerCase().contains(nombre.toLowerCase()))
@@ -22,50 +24,54 @@ public class ServicioInstrumento {
                 .toList();
     }
 
-    public static Optional<Instrumento> buscarPorCodigo(int codigo){
+    public static Optional<Instrumento> buscarPorCodigo(int codigo) {
         return instrumentos.stream()
-                .filter( e -> e.getId() == codigo)
+                .filter(e -> e.getId() == codigo)
                 .findFirst();
     }
 
     public static Optional<Instrumento> addInstrumento(InstrumentoInput input) throws Exception {
-        for (Instrumento instrumento : listarInstrumentos()){
-            if (input.id() < 0 || input.id() == instrumento.getId()){
-                throw  new Exception("id invalido");
-            }
+        if (buscarPorCodigo(input.id()).isPresent()) {
+            throw new Exception("Ya existe un instrumento registrado con el ID " + input.id());
         }
-        Instrumento ins = new Instrumento(input.id(), input.nombre(), input.precio(), input.fechaVenta(), input.numeroCuerdas(), input.numeroTrastes());
+        Instrumento ins = new Instrumento(input.id(), input.nombre(), input.precio(),
+                LocalDate.parse(input.fechaVenta()), input.numeroCuerdas(), input.numeroTrastes());
         instrumentos.add(ins);
 
         return Optional.of(ins);
     }
 
-    public static Optional<Instrumento> delInstrumento(int codigo) {
-        for (Instrumento instrumento : listarInstrumentos()){
-            if (instrumento.getId() == codigo){
-                instrumentos.remove(instrumento);
-                return Optional.of(instrumento);
-            }
+    public static Optional<Instrumento> delInstrumento(int codigo) throws Exception {
+        Optional<Instrumento> instrumento = buscarPorCodigo(codigo);
+        if (instrumento.isEmpty()) {
+            throw new Exception("No se ha encontrado ningun instrumento para eliminar");
         }
 
+        Instrumento ins = instrumento.get();
+        // Los accesorios dependen del instrumento: se eliminan con él para no dejarlos huérfanos
+        for (AccesorioCuerda accesorio : List.copyOf(ins.getAccesorio())) {
+            ServicioAccesorio.delAccesorio(accesorio.getId());
+        }
+        instrumentos.remove(ins);
 
-        return null;
+        return Optional.of(ins);
     }
 
     public static Optional<Instrumento> editInstrumento(InstrumentoInput ins) throws Exception {
-        for (Instrumento instrumento : listarInstrumentos()){
-
-            Instrumento inst = new Instrumento(ins.id(), ins.nombre(), ins.precio(), ins.fechaVenta(), ins.numeroCuerdas(), ins.numeroTrastes());
-
-            if (instrumento.getId() == ins.id() && inst != null) {
-                instrumentos.add(inst);
-                instrumentos.remove(instrumento);
-                return Optional.of(inst);
-            }
+        Optional<Instrumento> actual = buscarPorCodigo(ins.id());
+        if (actual.isEmpty()) {
+            throw new Exception("No se ha encontrado ningun instrumento para actualizar");
         }
-        return null;
 
+        Instrumento nuevo = new Instrumento(ins.id(), ins.nombre(), ins.precio(),
+                LocalDate.parse(ins.fechaVenta()), ins.numeroCuerdas(), ins.numeroTrastes());
+        // Se conservan los accesorios que ya tenía asignados
+        for (AccesorioCuerda accesorio : actual.get().getAccesorio()) {
+            nuevo.addAccesorio(accesorio);
+        }
+        instrumentos.set(instrumentos.indexOf(actual.get()), nuevo);
 
+        return Optional.of(nuevo);
     }
 
 }

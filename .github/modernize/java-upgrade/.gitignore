@@ -1,0 +1,24 @@
+# Visual Studio y archivos temporales
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Archivos compilados de C# / .NET
+**/bin/
+**/obj/
+*.exe
+*.pdb
+*.dll
+
+# Node.js / React
+node_modules/
+dist/
+.env.local
+
+# Java / Maven
+**/target/
+.settings/
+.classpath
+.project

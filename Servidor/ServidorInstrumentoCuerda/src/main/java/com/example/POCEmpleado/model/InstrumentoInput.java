@@ -1,10 +1,9 @@
 package com.example.POCEmpleado.model;
 
-import java.time.LocalDate;
-
-public record InstrumentoInput(int id, String nombre,
-        double precio,
-        LocalDate fechaVenta,
-        int numeroCuerdas,
-        int numeroTrastes) {
+public record InstrumentoInput(int id,
+                               String nombre,
+                               double precio,
+                               String fechaVenta,
+                               int numeroCuerdas,
+                               int numeroTrastes) {
 }

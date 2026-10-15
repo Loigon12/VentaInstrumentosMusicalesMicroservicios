@@ -1,22 +1,24 @@
-
 type Query {
     instrumento(nombre: String, precioMaximo: Float): [Instrumento]
     instrumentoPorCodigo(codigo: Int!): Instrumento
+    accesorio: [AccesorioCuerda]
+    accesorioPorCodigo(codigo: Int!): AccesorioCuerda
 }
 
 type Mutation {
-    addInstrumento(input: InstrumentoINput!): Instrumento
-    delInstrumento (input: Int!): Instrumento
-    editInstrumento (input: InstrumentoINput!): Instrumento
-
+    addInstrumento(input: InstrumentoInput!): Instrumento
+    delInstrumento(input: Int!): Instrumento
+    editInstrumento(input: InstrumentoInput!): Instrumento
+    addAccesorio(input: AccesorioCuerdaInput!): AccesorioCuerda
+    delAccesorio(input: Int!): AccesorioCuerda
+    editAccesorio(input: AccesorioCuerdaInput!): AccesorioCuerda
 }
 
-
-input InstrumentoINput {
+input InstrumentoInput {
     id: ID!
     nombre: String!
     precio: Float!
-    fechaVenta : String!
+    fechaVenta: String!
     numeroCuerdas: Int!
     numeroTrastes: Int!
 }
@@ -25,8 +27,31 @@ type Instrumento {
     id: ID
     nombre: String
     precio: Float
-    fechaVenta : String
+    fechaVenta: String
     numeroCuerdas: Int
     numeroTrastes: Int
+    accesorio: [AccesorioCuerda]
 }
 
+input AccesorioCuerdaInput {
+    id: ID!
+    nombre: String!
+    tipo: Tipo!
+    precio: Float!
+    marca: String!
+    idInstrumento: ID!
+}
+
+type AccesorioCuerda {
+    id: ID
+    nombre: String
+    tipo: Tipo
+    precio: Float
+    marca: String
+    idInstrumento: ID
+}
+
+enum Tipo {
+    CUERDAPULSADA,
+    CUERDAFROTADA
+}
