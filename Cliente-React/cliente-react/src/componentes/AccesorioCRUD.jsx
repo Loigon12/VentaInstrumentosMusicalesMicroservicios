@@ -141,7 +141,7 @@ export default function App() {
           </button>
           {menuDesplegado === 'ayuda' && (
             <div style={styles.dropdownMenu}>
-              <button style={styles.dropdownOption} onClick={() => alert('Sistema de Gestión de Accesorios v3.0\nDiseñado en React para Aplicaciones de Escritorio.')}>
+              <button style={styles.dropdownOption} onClick={() => alert('Desarrollado por\nJuan Jose Cossio, Armando Antonio Lopez, Sebastian Londoño y Daniel Ayala.\n\nProyecto de Gestión de Accesorios de Instrumentos de Cuerda.\n\n© 2026 Todos los derechos reservados.')}>
                 <span>ℹ</span> Acerca de...
               </button>
             </div>
