@@ -1,34 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-// Enum de tipos de accesorio para instrumento de cuerda
+// Enum de tipos de accesorio para coincidir EXACTAMENTE con el schema.graphqls
 export const TipoAccesorio = Object.freeze({
-  CUERDAS: 'Cuerdas',
-  AFINADOR: 'Afinador',
-  CAPO: 'Capocastro',
-  PUA: 'Púa / Plectro',
-  ESTUCHE: 'Estuche / Funda',
-  CORREA: 'Correa / Tahalí',
-  SOPORTE: 'Soporte',
-  SORDINA: 'Sordina / Mute',
-  OTRO: 'Otro'
+  CUERDAPULSADA: 'CUERDAPULSADA',
+  CUERDAFROTADA: 'CUERDAFROTADA'
 });
 
 export default function App() {
-  // Estado principal de datos de accesorios
-  const [accesorios, setAccesorios] = useState([
-    { id: 1, nombre: 'Juego de Cuerdas Calibre 0.10', tipo: TipoAccesorio.CUERDAS, precio: 45500, marca: "D'Addario", idInstrumento: 101 },
-    { id: 2, nombre: 'Afinador Clip Cromático', tipo: TipoAccesorio.AFINADOR, precio: 25000, marca: 'Snark', idInstrumento: 101 },
-    { id: 3, nombre: 'Capo de Aluminio', tipo: TipoAccesorio.CAPO, precio: 18990, marca: 'Kyser', idInstrumento: 102 }
-  ]);
-
-  // Vistas: 'inicio' | 'adicionar' | 'eliminar' | 'listar' | 'actualizar' | 'consultar'
+  const [accesorios, setAccesorios] = useState([]);
   const [vistaActual, setVistaActual] = useState('inicio');
-
-  // Menú desplegable activo: null | 'archivo' | 'accesorio' | 'ayuda'
   const [menuDesplegado, setMenuDesplegado] = useState(null);
-
-  // ID seleccionado para la vista de actualizar
   const [editandoId, setEditandoId] = useState(null);
+
+  // 1. CARGAR ACCESORIOS (Query)
+  useEffect(() => {
+    const cargarAccesorios = async () => {
+      try {
+        const response = await fetch('http://localhost:8081/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              query {
+                accesorio {
+                  id
+                  nombre
+                  tipo
+                  precio
+                  marca
+                  idInstrumento
+                }
+              }
+            `
+          })
+        });
+        const result = await response.json();
+        if (result.data && result.data.accesorio) {
+          setAccesorios(result.data.accesorio);
+        }
+      } catch (error) {
+        console.error("Error al conectar con el servidor GraphQL:", error);
+      }
+    };
+    cargarAccesorios();
+  }, []);
 
   const cerrarMenus = () => setMenuDesplegado(null);
 
@@ -42,15 +57,85 @@ export default function App() {
     setMenuDesplegado(null);
   };
 
-  // Handlers CRUD
-  const handleAdicionar = (nuevo) => {
-    setAccesorios([...accesorios, nuevo]);
-    cambiarVista('listar');
+  // 2. ADICIONAR ACCESORIO (Mutation)
+  const handleAdicionar = async (nuevo) => {
+    try {   
+      const response = await fetch('http://localhost:8081/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            mutation AddAccesorio($input: AccesorioCuerdaInput!) {
+              addAccesorio(input: $input) {
+                id
+                nombre
+                tipo
+                precio
+                marca
+                idInstrumento
+              }
+            }
+          `,
+          variables: {
+            input: {
+              id: nuevo.id.toString(), // Convertido a String porque schema pide ID!
+              nombre: nuevo.nombre,
+              tipo: nuevo.tipo, // Solo CUERDAPULSADA o CUERDAFROTADA
+              precio: parseFloat(nuevo.precio), // Float!
+              marca: nuevo.marca,
+              idInstrumento: nuevo.idInstrumento.toString() // Convertido a String porque schema pide ID!
+            }
+          }
+        })
+      });
+      
+      const result = await response.json();
+      if (result.errors) {
+        console.error("Error de GraphQL:", result.errors);
+        alert("Error al guardar: Revisa la consola para más detalles.");
+        return;
+      }
+
+      // Si todo sale bien, actualizamos el estado local
+      setAccesorios([...accesorios, nuevo]);
+      cambiarVista('listar');
+    } catch (error) {
+      console.error("Error al guardar en el servidor:", error);
+    }
   };
 
-  const handleEliminar = (id) => {
+  // 3. ELIMINAR ACCESORIO (Mutation)
+  const handleEliminar = async (id) => {
     if (window.confirm(`¿Está seguro de eliminar el accesorio con ID #${id}?`)) {
-      setAccesorios(accesorios.filter(a => a.id !== id));
+      try {
+        const response = await fetch('http://localhost:8081/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              mutation DelAccesorio($input: Int!) {
+                delAccesorio(input: $input) {
+                  id
+                }
+              }
+            `,
+            variables: {
+              input: parseInt(id) // El esquema pide Int!
+            }
+          })
+        });
+
+        const result = await response.json();
+        if (result.errors) {
+          console.error("Error de GraphQL:", result.errors);
+          alert("Error al eliminar de la base de datos.");
+          return;
+        }
+        
+        setAccesorios(accesorios.filter(a => a.id !== id));
+      } catch (error) {
+        console.error("Error al eliminar en el servidor:", error);
+      }
     }
   };
 
@@ -59,10 +144,46 @@ export default function App() {
     cambiarVista('actualizar');
   };
 
-  const handleGuardarActualizacion = (accesorioActualizado) => {
-    setAccesorios(accesorios.map(a => a.id === accesorioActualizado.id ? accesorioActualizado : a));
-    setEditandoId(null);
-    cambiarVista('listar');
+  // 4. ACTUALIZAR ACCESORIO (Mutation)
+  const handleGuardarActualizacion = async (accesorioActualizado) => {
+    try {
+      const response = await fetch('http://localhost:8081/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            mutation EditAccesorio($input: AccesorioCuerdaInput!) {
+              editAccesorio(input: $input) {
+                id
+              }
+            }
+          `,
+          variables: {
+            input: {
+              id: accesorioActualizado.id.toString(), // Convertido a String porque schema pide ID!
+              nombre: accesorioActualizado.nombre,
+              tipo: accesorioActualizado.tipo,
+              precio: parseFloat(accesorioActualizado.precio),
+              marca: accesorioActualizado.marca,
+              idInstrumento: accesorioActualizado.idInstrumento.toString() // Convertido a String porque schema pide ID!
+            }
+          }
+        })
+      });
+
+      const result = await response.json();
+      if (result.errors) {
+        console.error("Error de GraphQL:", result.errors);
+        alert("Error al actualizar en la base de datos.");
+        return;
+      }
+      
+      setAccesorios(accesorios.map(a => a.id === accesorioActualizado.id ? accesorioActualizado : a));
+      setEditandoId(null);
+      cambiarVista('listar');
+    } catch (error) {
+      console.error("Error al actualizar en el servidor:", error);
+    }
   };
 
   return (
@@ -79,9 +200,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* 2. NAVBAR SUPERIOR CON MENÚS DESPLEGABLES (PERMANENTE) */}
+      {/* 2. NAVBAR SUPERIOR CON MENÚS DESPLEGABLES */}
       <nav style={styles.navbar} onClick={(e) => e.stopPropagation()}>
-        {/* Opción Archivo */}
         <div style={styles.menuWrapper}>
           <button
             style={styles.navMenuBtn(menuDesplegado === 'archivo')}
@@ -102,7 +222,6 @@ export default function App() {
           )}
         </div>
 
-        {/* Opción AccesorioInstrumentoCuerda */}
         <div style={styles.menuWrapper}>
           <button
             style={styles.navMenuBtn(menuDesplegado === 'accesorio')}
@@ -113,25 +232,24 @@ export default function App() {
           {menuDesplegado === 'accesorio' && (
             <div style={styles.dropdownMenu}>
               <button style={styles.dropdownOption} onClick={() => cambiarVista('adicionar')}>
-                <span style={styles.iconAdd}></span> Adicionar Accesorio
+                 Adicionar Accesorio
               </button>
               <button style={styles.dropdownOption} onClick={() => cambiarVista('eliminar')}>
-                <span style={styles.iconDelete}></span> Eliminar Accesorio
+                 Eliminar Accesorio
               </button>
               <button style={styles.dropdownOption} onClick={() => cambiarVista('listar')}>
-                <span style={styles.iconList}></span> Listar Accesorio
+                 Listar Accesorio
               </button>
               <button style={styles.dropdownOption} onClick={() => cambiarVista('actualizar')}>
-                <span style={styles.iconEdit}></span> Actualizar Accesorio
+                 Actualizar Accesorio
               </button>
               <button style={styles.dropdownOption} onClick={() => cambiarVista('consultar')}>
-                <span style={styles.iconSearch}></span> Consulta Accesorio
+                 Consulta Accesorio
               </button>
             </div>
           )}
         </div>
 
-        {/* Opción Ayuda */}
         <div style={styles.menuWrapper}>
           <button
             style={styles.navMenuBtn(menuDesplegado === 'ayuda')}
@@ -141,7 +259,7 @@ export default function App() {
           </button>
           {menuDesplegado === 'ayuda' && (
             <div style={styles.dropdownMenu}>
-              <button style={styles.dropdownOption} onClick={() => alert('Desarrollado por\nJuan Jose Cossio, Armando Antonio Lopez, Sebastian Londoño y Daniel Ayala.\n\nProyecto de Gestión de Accesorios de Instrumentos de Cuerda.\n\n© 2026 Todos los derechos reservados.')}>
+              <button style={styles.dropdownOption} onClick={() => alert('Desarrollado para la materia POC.\n\n© 2026 Todos los derechos reservados.')}>
                 <span>ℹ</span> Acerca de...
               </button>
             </div>
@@ -149,7 +267,7 @@ export default function App() {
         </div>
       </nav>
 
-      {/* 3. ÁREA DE CONTENIDO DINÁMICO (NO QUITA EL NAVBAR) */}
+      {/* 3. ÁREA DE CONTENIDO DINÁMICO */}
       <main style={styles.contentArea}>
         {vistaActual === 'inicio' && <VistaInicio />}
 
@@ -218,7 +336,6 @@ function VistaInicio() {
         <p style={styles.welcomeSubtitle}>Módulo de Gestión de Accesorios de Cuerda</p>
       </div>
       <div style={styles.welcomeCard}>
-        <div style={{ fontSize: '40px', marginBottom: '12px' }}></div>
         <p style={styles.welcomeText}>¡Qué gusto verte por aquí! Tómate tu tiempo y siéntete como en casa.</p>
         <p style={styles.welcomeHint}>Selecciona una opción del menú superior <strong>AccesorioInstrumentoCuerda</strong> para comenzar.</p>
       </div>
@@ -230,7 +347,7 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
   const [form, setForm] = useState({
     id: '',
     nombre: '',
-    tipo: TipoAccesorio.CUERDAS,
+    tipo: TipoAccesorio.CUERDAPULSADA, // Valor por defecto actualizado
     precio: '',
     marca: '',
     idInstrumento: ''
@@ -239,10 +356,13 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const idNum = form.id ? parseInt(form.id) : Date.now();
-    if (accesorios.some(a => a.id === idNum)) {
+    
+    // Convertimos a Number para la validación local
+    if (accesorios.some(a => parseInt(a.id) === idNum)) {
       alert('El ID ingresado ya existe. Por favor ingrese uno diferente.');
       return;
     }
+    
     onGuardar({
       id: idNum,
       nombre: form.nombre,
@@ -257,7 +377,6 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
     <div style={styles.cardContainer}>
       <div style={styles.headerBlock}>
         <h2 style={styles.viewTitle}>Adicionar Accesorio de Cuerda</h2>
-        
       </div>
       <form onSubmit={handleSubmit} style={styles.formLayout}>
         <div style={styles.formGrid}>
@@ -331,7 +450,7 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
           </div>
         </div>
         <div style={styles.buttonRow}>
-          <button type="submit" style={styles.btnPrimary}> Guardar Registro</button>
+          <button type="submit" style={styles.btnPrimary}>Guardar Registro</button>
           <button type="button" onClick={onCancelar} style={styles.btnSecondary}>Cancelar</button>
         </div>
       </form>
@@ -347,7 +466,6 @@ function VistaEliminar({ accesorios, onEliminar }) {
     <div style={styles.cardContainer}>
       <div style={styles.headerBlock}>
         <h2 style={styles.viewTitle}>Eliminar Accesorio</h2>
-        
       </div>
 
       <div style={styles.filterCard}>
@@ -413,7 +531,7 @@ function VistaListar({ accesorios }) {
         <div style={styles.filterGrid}>
           <input
             type="text"
-            placeholder=" Filtrar por Nombre..."
+            placeholder="Filtrar por Nombre..."
             value={filtros.nombre}
             onChange={e => setFiltros({ ...filtros, nombre: e.target.value })}
             style={styles.input}
@@ -428,14 +546,14 @@ function VistaListar({ accesorios }) {
           </select>
           <input
             type="text"
-            placeholder=" Filtrar Marca..."
+            placeholder="Filtrar Marca..."
             value={filtros.marca}
             onChange={e => setFiltros({ ...filtros, marca: e.target.value })}
             style={styles.input}
           />
           <input
             type="number"
-            placeholder=" ID Instrumento..."
+            placeholder="ID Instrumento..."
             value={filtros.idInstrumento}
             onChange={e => setFiltros({ ...filtros, idInstrumento: e.target.value })}
             style={styles.input}
@@ -454,7 +572,7 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
   const [form, setForm] = useState(accesorioSeleccionado || {
     id: '',
     nombre: '',
-    tipo: TipoAccesorio.CUERDAS,
+    tipo: TipoAccesorio.CUERDAPULSADA,
     precio: '',
     marca: '',
     idInstrumento: ''
@@ -464,7 +582,7 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
     if (accesorioSeleccionado) {
       setForm(accesorioSeleccionado);
     }
-  }, [editandoId]);
+  }, [editandoId, accesorioSeleccionado]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -524,7 +642,7 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
               </select>
             </div>
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Precio ($ USD):</label>
+              <label style={styles.label}>Precio ($ COP):</label>
               <input
                 type="number"
                 step="0.01"
@@ -556,7 +674,7 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
             </div>
           </div>
           <div style={styles.buttonRow}>
-            <button type="submit" style={styles.btnPrimary}> Aplicar Cambios</button>
+            <button type="submit" style={styles.btnPrimary}>Aplicar Cambios</button>
             <button type="button" onClick={onCancelar} style={styles.btnSecondary}>Cancelar</button>
           </div>
         </form>
@@ -567,7 +685,7 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
   );
 }
 
-function VistaConsultar({ accesorios, onEditar, onEliminar }) {
+function VistaConsultar({ accesorios }) {
   const [consulta, setConsulta] = useState({ id: '', nombre: '' });
 
   const resultados = accesorios.filter(a => {
@@ -622,7 +740,7 @@ function VistaConsultar({ accesorios, onEditar, onEliminar }) {
 
 function TablaGeneral({ lista = false }) {
   if (lista.length === 0) {
-    return <div style={styles.emptyPrompt}>No se encontraron registros que coincidan con los criterios.</div>;
+    return <div style={styles.emptyPrompt}>No se encontraron registros que coincidan con los criterios o la base de datos está vacía.</div>;
   }
 
   return (
@@ -636,7 +754,6 @@ function TablaGeneral({ lista = false }) {
             <th style={styles.th}>Precio</th>
             <th style={styles.th}>Marca</th>
             <th style={styles.th}>ID Inst.</th>
-            
           </tr>
         </thead>
         <tbody>
@@ -659,7 +776,7 @@ function TablaGeneral({ lista = false }) {
 }
 
 // -----------------------------------------------------------------------------
-// SISTEMA DE ESTILOS INLINE - ESCRITORIO MODERNO (FLUENT / WINUI 3)
+// SISTEMA DE ESTILOS INLINE
 // -----------------------------------------------------------------------------
 
 const styles = {
@@ -690,9 +807,6 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
-  },
-  appBadge: {
-    fontSize: '13px'
   },
   titleText: {
     fontSize: '12px',
@@ -801,80 +915,77 @@ const styles = {
   },
   welcomeSubtitle: {
     margin: '6px 0 0 0',
-    fontSize: '14px',
-    color: '#93c5fd'
+    fontSize: '15px',
+    opacity: 0.9
   },
   welcomeCard: {
     backgroundColor: '#ffffff',
+    padding: '24px',
+    borderRadius: '10px',
     border: '1px solid #e2e8f0',
-    borderRadius: '12px',
-    padding: '40px 30px',
     textAlign: 'center',
-    width: '90%',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+    maxWidth: '500px'
   },
   welcomeText: {
-    fontSize: '16px',
-    fontWeight: '500',
-    color: '#1e293b',
-    margin: '0 0 8px 0'
+    fontSize: '15px',
+    color: '#334155',
+    margin: '0 0 12px 0'
   },
   welcomeHint: {
-    fontSize: '13px',
+    fontSize: '14px',
     color: '#64748b',
     margin: 0
   },
   cardContainer: {
-    maxWidth: '750px',
-    margin: '0 auto'
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    border: '1px solid #e2e8f0',
+    padding: '28px',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
   },
   headerBlock: {
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '16px'
+    gap: '12px',
+    marginBottom: '24px',
+    borderBottom: '1px solid #e2e8f0',
+    paddingBottom: '16px'
   },
   viewTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
     margin: 0,
+    fontSize: '22px',
+    fontWeight: '700',
     color: '#0f172a'
   },
   viewBadge: {
-    backgroundColor: '#eff6ff',
-    color: '#2563eb',
-    fontSize: '11px',
-    fontWeight: '600',
+    backgroundColor: '#dbeafe',
+    color: '#1d4ed8',
     padding: '4px 10px',
-    borderRadius: '20px'
-  },
-  filterCard: {
-    backgroundColor: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '8px',
-    padding: '16px',
-    marginBottom: '16px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-  },
-  filterGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-    gap: '10px'
+    borderRadius: '20px',
+    fontSize: '12px',
+    fontWeight: '600'
   },
   formLayout: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
-    backgroundColor: '#ffffff',
-    padding: '20px',
-    borderRadius: '8px',
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+    gap: '24px'
   },
   formGrid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '16px'
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '18px 24px'
+  },
+  filterCard: {
+    backgroundColor: '#f1f5f9',
+    padding: '16px',
+    borderRadius: '8px',
+    marginBottom: '20px',
+    border: '1px solid #e2e8f0'
+  },
+  filterGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '12px'
   },
   inputGroup: {
     display: 'flex',
@@ -882,186 +993,172 @@ const styles = {
     gap: '6px'
   },
   label: {
-    fontSize: '12px',
+    fontSize: '13px',
     fontWeight: '600',
     color: '#334155'
   },
   input: {
-    padding: '8px 12px',
-    fontSize: '13px',
-    border: '1px solid #cbd5e1',
+    padding: '10px 14px',
     borderRadius: '6px',
+    border: '1px solid #cbd5e1',
+    fontSize: '14px',
     outline: 'none',
-    color: '#0f172a',
-    backgroundColor: '#ffffff'
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    backgroundColor: '#ffffff',
+    color: '#0f172a'
   },
   select: {
-    padding: '8px 12px',
-    fontSize: '13px',
-    border: '1px solid #cbd5e1',
+    padding: '10px 14px',
     borderRadius: '6px',
+    border: '1px solid #cbd5e1',
+    fontSize: '14px',
     outline: 'none',
+    backgroundColor: '#ffffff',
     color: '#0f172a',
-    backgroundColor: '#ffffff'
+    cursor: 'pointer'
   },
   buttonRow: {
     display: 'flex',
-    gap: '10px',
-    justifyContent: 'flex-end',
-    borderTop: '1px solid #f1f5f9',
-    paddingTop: '14px'
+    gap: '12px',
+    marginTop: '10px',
+    justifyContent: 'flex-start'
   },
   btnPrimary: {
-    padding: '9px 18px',
     backgroundColor: '#2563eb',
     color: '#ffffff',
     border: 'none',
+    padding: '10px 24px',
     borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: '500',
+    fontSize: '14px',
+    fontWeight: '600',
     cursor: 'pointer',
     boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)'
   },
   btnSecondary: {
-    padding: '9px 18px',
     backgroundColor: '#ffffff',
     color: '#334155',
     border: '1px solid #cbd5e1',
+    padding: '10px 24px',
     borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: '500',
+    fontSize: '14px',
+    fontWeight: '600',
     cursor: 'pointer'
   },
   btnDanger: {
-    padding: '9px 16px',
     backgroundColor: '#dc2626',
     color: '#ffffff',
     border: 'none',
+    padding: '10px 20px',
     borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    marginTop: '10px'
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer'
   },
   deleteConfirmBox: {
-    padding: '16px',
     backgroundColor: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '8px'
+    border: '1px solid #f87171',
+    borderRadius: '8px',
+    padding: '20px',
+    display: 'inline-block'
+  },
+  notFoundBox: {
+    backgroundColor: '#fffbeb',
+    border: '1px solid #fcd34d',
+    color: '#b45309',
+    padding: '14px 20px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '500'
   },
   detailText: {
     margin: '4px 0',
-    fontSize: '13px',
-    color: '#7f1d1d'
+    fontSize: '14px',
+    color: '#334155'
   },
-  notFoundBox: {
-    padding: '12px',
-    backgroundColor: '#fef2f2',
-    color: '#991b1b',
-    borderRadius: '6px',
-    fontSize: '13px'
+  emptyPrompt: {
+    textAlign: 'center',
+    padding: '40px',
+    color: '#64748b',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px',
+    border: '1px dashed #cbd5e1',
+    fontSize: '14px'
   },
   tableWrapper: {
-    backgroundColor: '#ffffff',
-    border: '1px solid #e2e8f0',
+    overflowX: 'auto',
     borderRadius: '8px',
-    overflow: 'hidden',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+    border: '1px solid #e2e8f0',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    textAlign: 'left',
-    fontSize: '13px'
+    backgroundColor: '#ffffff',
+    fontSize: '14px'
   },
   tableHeaderRow: {
     backgroundColor: '#f1f5f9',
-    borderBottom: '1px solid #e2e8f0'
+    borderBottom: '2px solid #cbd5e1'
   },
   th: {
-    padding: '10px 14px',
+    padding: '12px 16px',
+    textAlign: 'left',
     fontWeight: '600',
-    color: '#475569',
-    fontSize: '12px'
+    color: '#334155',
+    whiteSpace: 'nowrap'
   },
   tr: {
-    borderBottom: '1px solid #f1f5f9'
+    borderBottom: '1px solid #e2e8f0',
+    transition: 'background-color 0.15s'
   },
   td: {
-    padding: '10px 14px',
-    color: '#334155'
+    padding: '12px 16px',
+    color: '#0f172a'
   },
   tdId: {
-    padding: '10px 14px',
+    padding: '12px 16px',
     fontWeight: '600',
-    color: '#2563eb'
+    color: '#475569'
   },
   tdName: {
-    padding: '10px 14px',
+    padding: '12px 16px',
     fontWeight: '500',
     color: '#0f172a'
   },
   tdPrice: {
-    padding: '10px 14px',
+    padding: '12px 16px',
+    fontFamily: 'monospace',
     fontWeight: '600',
-    color: '#15803d'
+    color: '#166534'
   },
   pillBadge: {
-    display: 'inline-block',
-    padding: '2px 8px',
-    backgroundColor: '#f1f5f9',
-    color: '#475569',
+    backgroundColor: '#e0e7ff',
+    color: '#4338ca',
+    padding: '4px 8px',
     borderRadius: '12px',
-    fontSize: '11px',
-    fontWeight: '500'
-  },
-  btnActionEdit: {
-    marginRight: '6px',
-    padding: '4px 8px',
-    backgroundColor: '#f1f5f9',
-    color: '#1e293b',
-    border: '1px solid #cbd5e1',
-    borderRadius: '4px',
-    fontSize: '11px',
-    cursor: 'pointer'
-  },
-  btnActionDelete: {
-    padding: '4px 8px',
-    backgroundColor: '#ffffff',
-    color: '#dc2626',
-    border: '1px solid #fca5a5',
-    borderRadius: '4px',
-    fontSize: '11px',
-    cursor: 'pointer'
-  },
-  emptyPrompt: {
-    padding: '30px',
-    textAlign: 'center',
-    color: '#64748b',
-    backgroundColor: '#ffffff',
-    border: '1px dashed #cbd5e1',
-    borderRadius: '8px',
-    fontSize: '13px'
+    fontSize: '12px',
+    fontWeight: '600'
   },
   statusBar: {
-    height: '28px',
+    height: '32px',
     backgroundColor: '#0f172a',
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
     padding: '0 16px',
-    fontSize: '11px',
-    color: '#94a3b8'
+    gap: '24px',
+    color: '#94a3b8',
+    fontSize: '12px'
   },
   statusSection: {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px'
+    gap: '8px'
   },
   statusDot: {
-    width: '6px',
-    height: '6px',
-    backgroundColor: '#22c55e',
-    borderRadius: '50%'
+    width: '8px',
+    height: '8px',
+    backgroundColor: '#10b981',
+    borderRadius: '50%',
+    boxShadow: '0 0 8px rgba(16, 185, 129, 0.4)'
   }
 };

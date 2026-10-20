@@ -52,11 +52,10 @@
             this.tableNumeroTrastes,
             this.tableNumeroCuerdas});
             this.tableInstrumentosCuerda.GridColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.tableInstrumentosCuerda.Location = new System.Drawing.Point(130, 101);
-            this.tableInstrumentosCuerda.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tableInstrumentosCuerda.Location = new System.Drawing.Point(71, 135);
             this.tableInstrumentosCuerda.Name = "tableInstrumentosCuerda";
             this.tableInstrumentosCuerda.RowHeadersWidth = 51;
-            this.tableInstrumentosCuerda.Size = new System.Drawing.Size(804, 337);
+            this.tableInstrumentosCuerda.Size = new System.Drawing.Size(801, 315);
             this.tableInstrumentosCuerda.TabIndex = 0;
             this.tableInstrumentosCuerda.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             // 
@@ -106,10 +105,9 @@
             // 
             this.btnListar.BackColor = System.Drawing.Color.DarkBlue;
             this.btnListar.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.btnListar.Location = new System.Drawing.Point(439, 446);
-            this.btnListar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnListar.Location = new System.Drawing.Point(388, 470);
             this.btnListar.Name = "btnListar";
-            this.btnListar.Size = new System.Drawing.Size(191, 57);
+            this.btnListar.Size = new System.Drawing.Size(143, 46);
             this.btnListar.TabIndex = 1;
             this.btnListar.Text = "Listar";
             this.btnListar.UseVisualStyleBackColor = false;
@@ -117,26 +115,24 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.BackColor = System.Drawing.Color.DarkBlue;
+            this.label1.BackColor = System.Drawing.Color.Transparent;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 19F);
-            this.label1.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label1.Location = new System.Drawing.Point(339, 34);
-            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label1.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.label1.Location = new System.Drawing.Point(12, 9);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(379, 37);
+            this.label1.Size = new System.Drawing.Size(301, 30);
             this.label1.TabIndex = 2;
             this.label1.Text = "Listar InstrumentoCuerda";
             // 
             // GUIListarInstrumentoCuerda
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.ClientSize = new System.Drawing.Size(1067, 554);
+            this.ClientSize = new System.Drawing.Size(972, 558);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.btnListar);
             this.Controls.Add(this.tableInstrumentosCuerda);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "GUIListarInstrumentoCuerda";
             this.Text = "GUIListarInstrumentoViento";
             ((System.ComponentModel.ISupportInitialize)(this.tableInstrumentosCuerda)).EndInit();

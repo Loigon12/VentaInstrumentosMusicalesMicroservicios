@@ -61,5 +61,10 @@ namespace POCInstrumentoCuerda
             if (!int.TryParse(value, out id) || id <= 0) throw new ArgumentException("El ID debe ser un entero positivo.");
             return id;
         }
+
+        private void txtPrecio_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

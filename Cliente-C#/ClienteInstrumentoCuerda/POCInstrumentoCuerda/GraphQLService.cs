@@ -52,7 +52,7 @@ namespace POCInstrumentoCuerda
             {
                 var response = await client.SendMutationAsync<InstrumentoMutationResponse>(new GraphQLRequest
                 {
-                    Query = "mutation ($input: InstrumentoINput!) { addInstrumento(input: $input) { id nombre precio fechaVenta numeroCuerdas numeroTrastes } }",
+                    Query = "mutation ($input: InstrumentoInput!) { addInstrumento(input: $input) { id nombre precio fechaVenta numeroCuerdas numeroTrastes } }",
                     Variables = new { input }
                 });
                 Validate(response.Errors);
@@ -80,7 +80,7 @@ namespace POCInstrumentoCuerda
             {
                 var response = await client.SendMutationAsync<InstrumentoMutationResponse>(new GraphQLRequest
                 {
-                    Query = "mutation ($input: InstrumentoINput!) { editInstrumento(input: $input) { id nombre precio fechaVenta numeroCuerdas numeroTrastes } }",
+                    Query = "mutation ($input: InstrumentoInput!) { editInstrumento(input: $input) { id nombre precio fechaVenta numeroCuerdas numeroTrastes } }",
                     Variables = new { input }
                 });
                 Validate(response.Errors);
