@@ -17,6 +17,7 @@ namespace POCInstrumentoCuerda
         {
             InitializeComponent();
             btnConsultar.Click += async delegate { await ConsultarAsync(); };
+            this.StartPosition = FormStartPosition.CenterScreen;
         }
 
         private async Task ConsultarAsync()

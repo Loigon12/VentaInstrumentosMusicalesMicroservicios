@@ -27,6 +27,7 @@ namespace POCInstrumentoCuerda
             filtroPrecioMaximo.SetBounds(365, 57, 100, 20);
             Controls.Add(filtroPrecioMaximo);
             btnListar.Click += async delegate { await ListarAsync(); };
+            this.StartPosition = FormStartPosition.CenterScreen;
         }
 
         private async Task ListarAsync()

@@ -17,6 +17,7 @@ namespace POCInstrumentoCuerda
         {
             InitializeComponent();
             btnAdicionar.Click += async delegate { await AdicionarAsync(); };
+            this.StartPosition = FormStartPosition.CenterScreen;
         }
 
         private async Task AdicionarAsync()
@@ -34,7 +35,7 @@ namespace POCInstrumentoCuerda
                 };
                 var created = await GraphQLService.AdicionarAsync(input);
                 MessageBox.Show("Instrumento adicionado con ID " + created.id, "Operación exitosa");
-                Close();
+               
             }
             catch (Exception exception) { MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }

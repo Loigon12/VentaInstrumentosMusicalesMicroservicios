@@ -35,7 +35,6 @@
             this.txtNumeroTrastes = new System.Windows.Forms.TextBox();
             this.txtPrecio = new System.Windows.Forms.TextBox();
             this.txtNombre = new System.Windows.Forms.TextBox();
-            this.txtId = new System.Windows.Forms.TextBox();
             this.btnActualizar = new System.Windows.Forms.Button();
             this.label8 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
@@ -48,6 +47,7 @@
             this.txtBuscarId = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
+            this.txtId = new System.Windows.Forms.Label();
             this.panel1.SuspendLayout();
             this.panel3.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -60,7 +60,7 @@
             this.panel1.Controls.Add(this.panel2);
             this.panel1.Controls.Add(this.label1);
             this.panel1.Location = new System.Drawing.Point(-1, -1);
-            this.panel1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.panel1.Margin = new System.Windows.Forms.Padding(4);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1068, 562);
             this.panel1.TabIndex = 0;
@@ -68,12 +68,12 @@
             // panel3
             // 
             this.panel3.BackColor = System.Drawing.SystemColors.ControlLight;
+            this.panel3.Controls.Add(this.txtId);
             this.panel3.Controls.Add(this.txtFechaVenta);
             this.panel3.Controls.Add(this.txtNumeroCuerdas);
             this.panel3.Controls.Add(this.txtNumeroTrastes);
             this.panel3.Controls.Add(this.txtPrecio);
             this.panel3.Controls.Add(this.txtNombre);
-            this.panel3.Controls.Add(this.txtId);
             this.panel3.Controls.Add(this.btnActualizar);
             this.panel3.Controls.Add(this.label8);
             this.panel3.Controls.Add(this.label7);
@@ -90,7 +90,7 @@
             // txtFechaVenta
             // 
             this.txtFechaVenta.Location = new System.Drawing.Point(60, 127);
-            this.txtFechaVenta.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtFechaVenta.Margin = new System.Windows.Forms.Padding(4);
             this.txtFechaVenta.Name = "txtFechaVenta";
             this.txtFechaVenta.Size = new System.Drawing.Size(265, 22);
             this.txtFechaVenta.TabIndex = 43;
@@ -98,7 +98,7 @@
             // txtNumeroCuerdas
             // 
             this.txtNumeroCuerdas.Location = new System.Drawing.Point(736, 135);
-            this.txtNumeroCuerdas.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtNumeroCuerdas.Margin = new System.Windows.Forms.Padding(4);
             this.txtNumeroCuerdas.Name = "txtNumeroCuerdas";
             this.txtNumeroCuerdas.Size = new System.Drawing.Size(179, 22);
             this.txtNumeroCuerdas.TabIndex = 42;
@@ -106,7 +106,7 @@
             // txtNumeroTrastes
             // 
             this.txtNumeroTrastes.Location = new System.Drawing.Point(396, 135);
-            this.txtNumeroTrastes.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtNumeroTrastes.Margin = new System.Windows.Forms.Padding(4);
             this.txtNumeroTrastes.Name = "txtNumeroTrastes";
             this.txtNumeroTrastes.Size = new System.Drawing.Size(196, 22);
             this.txtNumeroTrastes.TabIndex = 41;
@@ -114,7 +114,7 @@
             // txtPrecio
             // 
             this.txtPrecio.Location = new System.Drawing.Point(736, 44);
-            this.txtPrecio.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtPrecio.Margin = new System.Windows.Forms.Padding(4);
             this.txtPrecio.Name = "txtPrecio";
             this.txtPrecio.Size = new System.Drawing.Size(179, 22);
             this.txtPrecio.TabIndex = 39;
@@ -122,25 +122,18 @@
             // txtNombre
             // 
             this.txtNombre.Location = new System.Drawing.Point(396, 44);
-            this.txtNombre.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtNombre.Margin = new System.Windows.Forms.Padding(4);
             this.txtNombre.Name = "txtNombre";
             this.txtNombre.Size = new System.Drawing.Size(196, 22);
             this.txtNombre.TabIndex = 38;
-            // 
-            // txtId
-            // 
-            this.txtId.Location = new System.Drawing.Point(93, 44);
-            this.txtId.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.txtId.Name = "txtId";
-            this.txtId.Size = new System.Drawing.Size(179, 22);
-            this.txtId.TabIndex = 37;
+            this.txtNombre.TextChanged += new System.EventHandler(this.txtNombre_TextChanged);
             // 
             // btnActualizar
             // 
             this.btnActualizar.BackColor = System.Drawing.Color.DarkBlue;
             this.btnActualizar.ForeColor = System.Drawing.SystemColors.ControlLightLight;
             this.btnActualizar.Location = new System.Drawing.Point(429, 207);
-            this.btnActualizar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnActualizar.Margin = new System.Windows.Forms.Padding(4);
             this.btnActualizar.Name = "btnActualizar";
             this.btnActualizar.Size = new System.Drawing.Size(149, 39);
             this.btnActualizar.TabIndex = 36;
@@ -277,13 +270,26 @@
             this.label1.TabIndex = 20;
             this.label1.Text = "Actualizar InstrumentoCuerda";
             // 
+            // txtId
+            // 
+            this.txtId.AutoSize = true;
+            this.txtId.BackColor = System.Drawing.Color.Transparent;
+            this.txtId.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.txtId.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.txtId.Location = new System.Drawing.Point(149, 46);
+            this.txtId.Name = "txtId";
+            this.txtId.Size = new System.Drawing.Size(63, 20);
+            this.txtId.TabIndex = 44;
+            this.txtId.Text = "______";
+            this.txtId.Click += new System.EventHandler(this.txtId_Click);
+            // 
             // GUIActualizarInstrumentoCuerda
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1067, 554);
             this.Controls.Add(this.panel1);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "GUIActualizarInstrumentoCuerda";
             this.Text = "GUIActualizarInstrumentoCuerda";
             this.panel1.ResumeLayout(false);
@@ -303,7 +309,6 @@
         private System.Windows.Forms.TextBox txtNumeroTrastes;
         private System.Windows.Forms.TextBox txtPrecio;
         private System.Windows.Forms.TextBox txtNombre;
-        private System.Windows.Forms.TextBox txtId;
         private System.Windows.Forms.Button btnActualizar;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label label7;
@@ -318,5 +323,6 @@
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Panel panel3;
         private System.Windows.Forms.DateTimePicker txtFechaVenta;
+        private System.Windows.Forms.Label txtId;
     }
 }

@@ -21,6 +21,7 @@ namespace POCInstrumentoCuerda
             btnConsultar.Click += async delegate { await BuscarAsync(); };
             btnActualizar.Click += async delegate { await ActualizarAsync(); };
             btnActualizar.Enabled = false;
+            this.StartPosition = FormStartPosition.CenterScreen;
         }
 
         private async Task BuscarAsync()
@@ -60,7 +61,7 @@ namespace POCInstrumentoCuerda
         };
         await GraphQLService.ActualizarAsync(input);
         MessageBox.Show("Instrumento actualizado.", "Operación exitosa");
-        Close();
+        
     }
     catch (Exception exception)
     {
@@ -102,6 +103,21 @@ namespace POCInstrumentoCuerda
         }
 
         private void btnActualizar_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtId_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtNombre_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtId_Click(object sender, EventArgs e)
         {
 
         }

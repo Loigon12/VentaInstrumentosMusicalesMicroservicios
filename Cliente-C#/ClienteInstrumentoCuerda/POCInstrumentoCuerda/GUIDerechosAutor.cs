@@ -23,6 +23,7 @@ namespace POCInstrumentoCuerda
                 ForeColor = Color.White,
                 Location = new Point(288, 330)
             });
+            this.StartPosition = FormStartPosition.CenterScreen;
         }
 
         private void label3_Click(object sender, EventArgs e)

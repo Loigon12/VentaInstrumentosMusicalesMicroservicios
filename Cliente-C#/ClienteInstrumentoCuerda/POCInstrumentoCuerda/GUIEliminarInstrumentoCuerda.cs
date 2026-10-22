@@ -21,6 +21,7 @@ namespace POCInstrumentoCuerda
             btnConsultar.Click += async delegate { await BuscarAsync(); };
             btnEliminar.Click += async delegate { await EliminarAsync(); };
             btnEliminar.Enabled = false;
+            this.StartPosition = FormStartPosition.CenterScreen;
         }
 
         private async Task BuscarAsync()
@@ -47,7 +48,7 @@ namespace POCInstrumentoCuerda
             {
                 await GraphQLService.EliminarAsync(ParseId(instrumentoEncontrado.id));
                 MessageBox.Show("Instrumento eliminado.", "Operación exitosa");
-                Close();
+                
             }
             catch (Exception exception) { MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
