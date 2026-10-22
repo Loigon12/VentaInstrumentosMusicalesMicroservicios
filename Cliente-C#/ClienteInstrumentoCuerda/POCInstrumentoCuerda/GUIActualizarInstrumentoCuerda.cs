@@ -46,24 +46,35 @@ namespace POCInstrumentoCuerda
         }
 
         private async Task ActualizarAsync()
+{
+    try
+    {
+        var input = new InstrumentoInput
         {
-            try
-            {
-                var input = new InstrumentoInput
-                {
-                    id = ParseId(instrumentoEncontrado.id),
-                    nombre = Required(txtNombre.Text, "Nombre"),
-                    precio = ParseDouble(txtPrecio.Text, "Precio"),
-                    fechaVenta = txtFechaVenta.Text,
-                    numeroCuerdas = ParsePositive(txtNumeroCuerdas.Text, "Número de cuerdas"),
-                    numeroTrastes = ParseNonNegative(txtNumeroTrastes.Text, "Número de trastes")
-                };
-                await GraphQLService.ActualizarAsync(input);
-                MessageBox.Show("Instrumento actualizado.", "Operación exitosa");
-                Close();
-            }
-            catch (Exception exception) { MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            id = ParseId(instrumentoEncontrado.id),
+            nombre = Required(txtNombre.Text, "Nombre"),
+            precio = ParseDouble(txtPrecio.Text, "Precio"),
+            fechaVenta = txtFechaVenta.Value.ToString("yyyy-MM-dd"),
+            numeroCuerdas = ParsePositive(txtNumeroCuerdas.Text, "Número de cuerdas"),
+            numeroTrastes = ParseNonNegative(txtNumeroTrastes.Text, "Número de trastes")
+        };
+        await GraphQLService.ActualizarAsync(input);
+        MessageBox.Show("Instrumento actualizado.", "Operación exitosa");
+        Close();
+    }
+    catch (Exception exception)
+    {
+        // Construimos un mensaje que incluya el error principal y el detalle específico si existe.
+        string mensajeError = exception.Message;
+        
+        if (exception.InnerException != null)
+        {
+            mensajeError += $"\n\nDetalle específico: {exception.InnerException.Message}";
         }
+
+        MessageBox.Show(mensajeError, "Error al actualizar", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+}
 
         private static int ParseId(string value) { return ParsePositive(value, "ID"); }
         private static int ParsePositive(string value, string field)
@@ -88,6 +99,11 @@ namespace POCInstrumentoCuerda
         {
             if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException(field + " es obligatorio.");
             return value.Trim();
+        }
+
+        private void btnActualizar_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

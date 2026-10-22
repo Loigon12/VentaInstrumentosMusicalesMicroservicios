@@ -60,8 +60,9 @@
             this.panel1.Controls.Add(this.panel2);
             this.panel1.Controls.Add(this.label1);
             this.panel1.Location = new System.Drawing.Point(-1, -1);
+            this.panel1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(801, 457);
+            this.panel1.Size = new System.Drawing.Size(1068, 562);
             this.panel1.TabIndex = 0;
             // 
             // panel3
@@ -80,64 +81,72 @@
             this.panel3.Controls.Add(this.label5);
             this.panel3.Controls.Add(this.label4);
             this.panel3.Controls.Add(this.label3);
-            this.panel3.Location = new System.Drawing.Point(32, 168);
-            this.panel3.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panel3.Location = new System.Drawing.Point(43, 207);
+            this.panel3.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(748, 248);
+            this.panel3.Size = new System.Drawing.Size(997, 305);
             this.panel3.TabIndex = 44;
             // 
             // txtFechaVenta
             // 
-            this.txtFechaVenta.Location = new System.Drawing.Point(45, 103);
+            this.txtFechaVenta.Location = new System.Drawing.Point(60, 127);
+            this.txtFechaVenta.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtFechaVenta.Name = "txtFechaVenta";
-            this.txtFechaVenta.Size = new System.Drawing.Size(200, 20);
+            this.txtFechaVenta.Size = new System.Drawing.Size(265, 22);
             this.txtFechaVenta.TabIndex = 43;
             // 
             // txtNumeroCuerdas
             // 
-            this.txtNumeroCuerdas.Location = new System.Drawing.Point(552, 110);
+            this.txtNumeroCuerdas.Location = new System.Drawing.Point(736, 135);
+            this.txtNumeroCuerdas.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtNumeroCuerdas.Name = "txtNumeroCuerdas";
-            this.txtNumeroCuerdas.Size = new System.Drawing.Size(135, 20);
+            this.txtNumeroCuerdas.Size = new System.Drawing.Size(179, 22);
             this.txtNumeroCuerdas.TabIndex = 42;
             // 
             // txtNumeroTrastes
             // 
-            this.txtNumeroTrastes.Location = new System.Drawing.Point(297, 110);
+            this.txtNumeroTrastes.Location = new System.Drawing.Point(396, 135);
+            this.txtNumeroTrastes.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtNumeroTrastes.Name = "txtNumeroTrastes";
-            this.txtNumeroTrastes.Size = new System.Drawing.Size(148, 20);
+            this.txtNumeroTrastes.Size = new System.Drawing.Size(196, 22);
             this.txtNumeroTrastes.TabIndex = 41;
             // 
             // txtPrecio
             // 
-            this.txtPrecio.Location = new System.Drawing.Point(552, 36);
+            this.txtPrecio.Location = new System.Drawing.Point(736, 44);
+            this.txtPrecio.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtPrecio.Name = "txtPrecio";
-            this.txtPrecio.Size = new System.Drawing.Size(135, 20);
+            this.txtPrecio.Size = new System.Drawing.Size(179, 22);
             this.txtPrecio.TabIndex = 39;
             // 
             // txtNombre
             // 
-            this.txtNombre.Location = new System.Drawing.Point(297, 36);
+            this.txtNombre.Location = new System.Drawing.Point(396, 44);
+            this.txtNombre.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtNombre.Name = "txtNombre";
-            this.txtNombre.Size = new System.Drawing.Size(148, 20);
+            this.txtNombre.Size = new System.Drawing.Size(196, 22);
             this.txtNombre.TabIndex = 38;
             // 
             // txtId
             // 
-            this.txtId.Location = new System.Drawing.Point(70, 36);
+            this.txtId.Location = new System.Drawing.Point(93, 44);
+            this.txtId.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtId.Name = "txtId";
-            this.txtId.Size = new System.Drawing.Size(135, 20);
+            this.txtId.Size = new System.Drawing.Size(179, 22);
             this.txtId.TabIndex = 37;
             // 
             // btnActualizar
             // 
             this.btnActualizar.BackColor = System.Drawing.Color.DarkBlue;
             this.btnActualizar.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.btnActualizar.Location = new System.Drawing.Point(322, 168);
+            this.btnActualizar.Location = new System.Drawing.Point(429, 207);
+            this.btnActualizar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnActualizar.Name = "btnActualizar";
-            this.btnActualizar.Size = new System.Drawing.Size(112, 32);
+            this.btnActualizar.Size = new System.Drawing.Size(149, 39);
             this.btnActualizar.TabIndex = 36;
             this.btnActualizar.Text = "Actualizar";
             this.btnActualizar.UseVisualStyleBackColor = false;
+            this.btnActualizar.Click += new System.EventHandler(this.btnActualizar_Click);
             // 
             // label8
             // 
@@ -145,10 +154,9 @@
             this.label8.BackColor = System.Drawing.Color.Transparent;
             this.label8.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.label8.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label8.Location = new System.Drawing.Point(556, 90);
-            this.label8.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label8.Location = new System.Drawing.Point(741, 111);
             this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(139, 17);
+            this.label8.Size = new System.Drawing.Size(164, 20);
             this.label8.TabIndex = 29;
             this.label8.Text = "Número de Cuerdas:";
             // 
@@ -158,10 +166,9 @@
             this.label7.BackColor = System.Drawing.Color.Transparent;
             this.label7.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.label7.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label7.Location = new System.Drawing.Point(314, 90);
-            this.label7.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label7.Location = new System.Drawing.Point(419, 111);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(130, 17);
+            this.label7.Size = new System.Drawing.Size(153, 20);
             this.label7.TabIndex = 28;
             this.label7.Text = "Número de Trastes";
             // 
@@ -171,10 +178,9 @@
             this.label6.BackColor = System.Drawing.Color.Transparent;
             this.label6.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.label6.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label6.Location = new System.Drawing.Point(84, 74);
-            this.label6.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label6.Location = new System.Drawing.Point(112, 91);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(112, 17);
+            this.label6.Size = new System.Drawing.Size(131, 20);
             this.label6.TabIndex = 27;
             this.label6.Text = "Fecha de Venta:";
             // 
@@ -184,10 +190,9 @@
             this.label5.BackColor = System.Drawing.Color.Transparent;
             this.label5.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.label5.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label5.Location = new System.Drawing.Point(578, 16);
-            this.label5.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label5.Location = new System.Drawing.Point(771, 20);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(91, 17);
+            this.label5.Size = new System.Drawing.Size(110, 20);
             this.label5.TabIndex = 26;
             this.label5.Text = "Precio (COP)";
             // 
@@ -197,10 +202,9 @@
             this.label4.BackColor = System.Drawing.Color.Transparent;
             this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.label4.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label4.Location = new System.Drawing.Point(305, 16);
-            this.label4.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label4.Location = new System.Drawing.Point(407, 20);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(146, 17);
+            this.label4.Size = new System.Drawing.Size(173, 20);
             this.label4.TabIndex = 25;
             this.label4.Text = "Nombre del accesorio";
             // 
@@ -210,10 +214,9 @@
             this.label3.BackColor = System.Drawing.Color.Transparent;
             this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.label3.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label3.Location = new System.Drawing.Point(76, 16);
-            this.label3.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label3.Location = new System.Drawing.Point(101, 20);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(130, 17);
+            this.label3.Size = new System.Drawing.Size(154, 20);
             this.label3.TabIndex = 24;
             this.label3.Text = "ID (Número entero)";
             // 
@@ -223,10 +226,10 @@
             this.panel2.Controls.Add(this.btnConsultar);
             this.panel2.Controls.Add(this.txtBuscarId);
             this.panel2.Controls.Add(this.label2);
-            this.panel2.Location = new System.Drawing.Point(56, 85);
-            this.panel2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panel2.Location = new System.Drawing.Point(75, 105);
+            this.panel2.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(300, 50);
+            this.panel2.Size = new System.Drawing.Size(400, 62);
             this.panel2.TabIndex = 43;
             // 
             // btnConsultar
@@ -234,20 +237,20 @@
             this.btnConsultar.BackColor = System.Drawing.Color.DarkBlue;
             this.btnConsultar.Cursor = System.Windows.Forms.Cursors.Default;
             this.btnConsultar.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.btnConsultar.Location = new System.Drawing.Point(205, 9);
-            this.btnConsultar.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnConsultar.Location = new System.Drawing.Point(273, 11);
+            this.btnConsultar.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btnConsultar.Name = "btnConsultar";
-            this.btnConsultar.Size = new System.Drawing.Size(75, 27);
+            this.btnConsultar.Size = new System.Drawing.Size(100, 33);
             this.btnConsultar.TabIndex = 23;
             this.btnConsultar.Text = "Consultar";
             this.btnConsultar.UseVisualStyleBackColor = false;
             // 
             // txtBuscarId
             // 
-            this.txtBuscarId.Location = new System.Drawing.Point(46, 13);
-            this.txtBuscarId.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txtBuscarId.Location = new System.Drawing.Point(61, 16);
+            this.txtBuscarId.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.txtBuscarId.Name = "txtBuscarId";
-            this.txtBuscarId.Size = new System.Drawing.Size(143, 20);
+            this.txtBuscarId.Size = new System.Drawing.Size(189, 22);
             this.txtBuscarId.TabIndex = 22;
             // 
             // label2
@@ -256,10 +259,9 @@
             this.label2.BackColor = System.Drawing.Color.Transparent;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.label2.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label2.Location = new System.Drawing.Point(19, 14);
-            this.label2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label2.Location = new System.Drawing.Point(25, 17);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(25, 17);
+            this.label2.Size = new System.Drawing.Size(31, 20);
             this.label2.TabIndex = 21;
             this.label2.Text = "ID:";
             // 
@@ -269,19 +271,19 @@
             this.label1.BackColor = System.Drawing.Color.Transparent;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F);
             this.label1.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label1.Location = new System.Drawing.Point(52, 43);
-            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label1.Location = new System.Drawing.Point(69, 53);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(256, 24);
+            this.label1.Size = new System.Drawing.Size(326, 29);
             this.label1.TabIndex = 20;
             this.label1.Text = "Actualizar InstrumentoCuerda";
             // 
             // GUIActualizarInstrumentoCuerda
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(1067, 554);
             this.Controls.Add(this.panel1);
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "GUIActualizarInstrumentoCuerda";
             this.Text = "GUIActualizarInstrumentoCuerda";
             this.panel1.ResumeLayout(false);
