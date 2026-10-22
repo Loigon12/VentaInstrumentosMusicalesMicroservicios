@@ -601,17 +601,14 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
       </div>
 
       <div style={styles.filterCard}>
-        <label style={styles.label}>Seleccione el ID a editar:</label>
-        <select
+        <label style={styles.label}>Ingrese el ID a editar:</label>
+        <input
+          type="number"
+          placeholder="Ej: 1"
           value={editandoId || ''}
           onChange={e => onSeleccionarId(e.target.value ? parseInt(e.target.value) : null)}
-          style={{ ...styles.select, maxWidth: '320px', marginTop: '6px' }}
-        >
-          <option value="">-- Seleccionar registro --</option>
-          {accesorios.map(a => (
-            <option key={a.id} value={a.id}>ID #{a.id} - {a.nombre}</option>
-          ))}
-        </select>
+          style={{ ...styles.input, maxWidth: '320px', marginTop: '6px', display: 'block' }}
+        />
       </div>
 
       {accesorioSeleccionado ? (
@@ -679,7 +676,7 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
           </div>
         </form>
       ) : (
-        <div style={styles.emptyPrompt}>Seleccione un ID en el desplegable superior para cargar el formulario de edición.</div>
+        <div style={styles.emptyPrompt}>Ingrese un ID válido en el campo superior para cargar el formulario de edición.</div>
       )}
     </div>
   );
