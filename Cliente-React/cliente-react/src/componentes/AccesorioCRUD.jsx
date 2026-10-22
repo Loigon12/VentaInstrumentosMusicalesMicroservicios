@@ -259,7 +259,7 @@ export default function App() {
           </button>
           {menuDesplegado === 'ayuda' && (
             <div style={styles.dropdownMenu}>
-              <button style={styles.dropdownOption} onClick={() => alert('Desarrollado para la materia POC.\n\n© 2026 Todos los derechos reservados.')}>
+              <button style={styles.dropdownOption} onClick={() => alert('Desarrollado por Juan Jose Cossio, Armando Antonio Lopez, Daniel Ayala y Sebastian Londoño.\n\n© 2026 Todos los derechos reservados.')}>
                 <span>ℹ</span> Acerca de...
               </button>
             </div>
