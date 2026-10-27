@@ -11,7 +11,7 @@ using POCInstrumentoCuerda.model;
 
 namespace POCInstrumentoCuerda
 {
-    public partial class GUIListarInstrumentoCuerda : Form
+    public partial class GUIListarInstrumentoCuerda : Form, ICambiable
     {
         private readonly TextBox filtroNombre = new TextBox();
         private readonly TextBox filtroPrecioMaximo = new TextBox();
@@ -28,6 +28,9 @@ namespace POCInstrumentoCuerda
             Controls.Add(filtroPrecioMaximo);
             btnListar.Click += async delegate { await ListarAsync(); };
             this.StartPosition = FormStartPosition.CenterScreen;
+            ServicioObserver.Agregar(this);
+            FormClosed += (s, e) => ServicioObserver.Eliminar(this);
+            Shown += async (s, e) => await ListarAsync();
         }
 
         private async Task ListarAsync()
@@ -50,10 +53,25 @@ namespace POCInstrumentoCuerda
                 foreach (var instrumento in instrumentos)
                 {
                     tableInstrumentosCuerda.Rows.Add(instrumento.id, instrumento.nombre, instrumento.precio,
-                        instrumento.fechaVenta, instrumento.numeroTrastes, instrumento.numeroCuerdas);
+                        instrumento.fechaVenta, instrumento.numeroTrastes, instrumento.numeroCuerdas,
+                        string.Join(", ", (instrumento.accesorio ?? new List<Accesorio>()).Select(a => a.id)));
                 }
             }
             catch (Exception exception) { MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+        }
+
+
+        public void Cambio()
+        {
+            if (IsDisposed || !IsHandleCreated) return;
+            if (InvokeRequired)
+            {
+                try { BeginInvoke(new Action(async () => await ListarAsync())); } catch (InvalidOperationException) { }
+            }
+            else
+            {
+                _ = ListarAsync();
+            }
         }
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)

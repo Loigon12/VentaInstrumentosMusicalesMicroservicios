@@ -46,7 +46,7 @@ namespace POCInstrumentoCuerda
             if (MessageBox.Show("¿Confirma la eliminación del instrumento mostrado?", "Confirmar", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             try
             {
-                await GraphQLService.EliminarAsync(ParseId(instrumentoEncontrado.id));
+                await GraphQLService.EliminarAsync(instrumentoEncontrado.id);
                 MessageBox.Show("Instrumento eliminado.", "Operación exitosa");
                 
             }

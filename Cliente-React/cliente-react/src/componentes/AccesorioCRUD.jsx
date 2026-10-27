@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import InstrumentosCRUD from './InstrumentosCRUD';
 
 // Enum de tipos de accesorio para coincidir EXACTAMENTE con el schema.graphqls
 export const TipoAccesorio = Object.freeze({
@@ -6,11 +7,12 @@ export const TipoAccesorio = Object.freeze({
   CUERDAFROTADA: 'CUERDAFROTADA'
 });
 
-export default function App() {
+export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = false }) {
   const [accesorios, setAccesorios] = useState([]);
-  const [vistaActual, setVistaActual] = useState('inicio');
+  const [vistaActual, setVistaActual] = useState(vistaInicial);
   const [menuDesplegado, setMenuDesplegado] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
+  const [operacionInstrumentos, setOperacionInstrumentos] = useState('listar');
 
   // 1. CARGAR ACCESORIOS (Query)
   useEffect(() => {
@@ -35,6 +37,9 @@ export default function App() {
           })
         });
         const result = await response.json();
+        if (!response.ok || result.errors?.length) {
+          throw new Error(result.errors?.map(e => e.message).join('\n') || 'Error HTTP al consultar accesorios.');
+        }
         if (result.data && result.data.accesorio) {
           setAccesorios(result.data.accesorio);
         }
@@ -90,14 +95,16 @@ export default function App() {
       });
       
       const result = await response.json();
-      if (result.errors) {
+      if (!response.ok || result.errors?.length) {
         console.error("Error de GraphQL:", result.errors);
         alert("Error al guardar: Revisa la consola para más detalles.");
         return;
       }
 
-      // Si todo sale bien, actualizamos el estado local
-      setAccesorios([...accesorios, nuevo]);
+      // Usar el registro devuelto por el servidor evita diferencias de tipo en los ID.
+      const creado = result.data?.addAccesorio;
+      if (!creado) throw new Error('El servidor no devolvió el accesorio creado.');
+      setAccesorios(prev => [...prev.filter(a => String(a.id) !== String(creado.id)), creado]);
       cambiarVista('listar');
     } catch (error) {
       console.error("Error al guardar en el servidor:", error);
@@ -126,13 +133,13 @@ export default function App() {
         });
 
         const result = await response.json();
-        if (result.errors) {
+        if (!response.ok || result.errors?.length) {
           console.error("Error de GraphQL:", result.errors);
           alert("Error al eliminar de la base de datos.");
           return;
         }
         
-        setAccesorios(accesorios.filter(a => a.id !== id));
+        setAccesorios(accesorios.filter(a => String(a.id) !== String(id)));
       } catch (error) {
         console.error("Error al eliminar en el servidor:", error);
       }
@@ -155,6 +162,11 @@ export default function App() {
             mutation EditAccesorio($input: AccesorioCuerdaInput!) {
               editAccesorio(input: $input) {
                 id
+                nombre
+                tipo
+                precio
+                marca
+                idInstrumento
               }
             }
           `,
@@ -172,13 +184,17 @@ export default function App() {
       });
 
       const result = await response.json();
-      if (result.errors) {
+      if (!response.ok || result.errors?.length) {
         console.error("Error de GraphQL:", result.errors);
         alert("Error al actualizar en la base de datos.");
         return;
       }
       
-      setAccesorios(accesorios.map(a => a.id === accesorioActualizado.id ? accesorioActualizado : a));
+      const actualizado = result.data?.editAccesorio;
+      if (!actualizado) throw new Error('El servidor no devolvió el accesorio actualizado.');
+      setAccesorios(prev => prev.map(a => String(a.id) === String(actualizado.id)
+        ? { ...a, ...accesorioActualizado, ...actualizado }
+        : a));
       setEditandoId(null);
       cambiarVista('listar');
     } catch (error) {
@@ -187,11 +203,12 @@ export default function App() {
   };
 
   return (
-    <div style={styles.windowFrame} onClick={cerrarMenus}>
-      {/* 1. BARRA DE TÍTULO TIPO WINDOWS / MACOS */}
+    <div style={embebido ? styles.embeddedFrame : styles.windowFrame} onClick={cerrarMenus}>
+      {!embebido && <>
+      {/* Barra de título de la ventana independiente */}
       <div style={styles.windowTitleBar}>
         <div style={styles.titleLeft}>
-          <span style={styles.titleText}>Venta de Instrumentos de Cuerda</span>
+          <span style={styles.titleText}>Venta de Instrumentos Musicales</span>
         </div>
         <div style={styles.windowControls}>
           <button style={styles.controlBtn} title="Minimizar">─</button>
@@ -200,75 +217,61 @@ export default function App() {
         </div>
       </div>
 
-      {/* 2. NAVBAR SUPERIOR CON MENÚS DESPLEGABLES */}
+      {/* Navegación principal con el mismo estilo visual del cliente original */}
       <nav style={styles.navbar} onClick={(e) => e.stopPropagation()}>
+        <button type="button" style={styles.navMenuBtn(false)} onClick={() => cambiarVista('inicio')}>Inicio</button>
+
+        <button
+          type="button"
+          style={styles.navMenuBtn(false)}
+          onClick={() => alert('Desarrollado por Juan Jose Cossio, Armando Antonio Lopez, Daniel Ayala y Sebastian Londoño.\n\nSistema de gestión conectado mediante GraphQL.\n© 2026 Todos los derechos reservados.')}
+        >Acerca de</button>
+
         <div style={styles.menuWrapper}>
-          <button
-            style={styles.navMenuBtn(menuDesplegado === 'archivo')}
-            onClick={(e) => toggleMenu(e, 'archivo')}
-          >
-            Archivo <span style={{ fontSize: '9px', marginLeft: '4px' }}>▼</span>
+          <button type="button" style={styles.navMenuBtn(menuDesplegado === 'instrumento')} onClick={(e) => toggleMenu(e, 'instrumento')}>
+            Instrumentos de cuerda <span style={{ fontSize: '9px', marginLeft: '4px' }}>▼</span>
           </button>
-          {menuDesplegado === 'archivo' && (
+          {menuDesplegado === 'instrumento' && (
             <div style={styles.dropdownMenu}>
-              <button style={styles.dropdownOption} onClick={() => cambiarVista('inicio')}>
-                <span></span> Inicio
-              </button>
-              <div style={styles.dropdownDivider} />
-              <button style={styles.dropdownOption} onClick={() => { if (window.confirm('¿Reiniciar la aplicación?')) window.location.reload(); }}>
-                <span></span> Reiniciar App
-              </button>
+              <button style={styles.dropdownOption} onClick={() => { setOperacionInstrumentos('adicionar'); cambiarVista('instrumentos'); }}>Adicionar instrumento</button>
+              <button style={styles.dropdownOption} onClick={() => { setOperacionInstrumentos('listar'); cambiarVista('instrumentos'); }}>Listar instrumentos</button>
+              <button style={styles.dropdownOption} onClick={() => { setOperacionInstrumentos('consultar'); cambiarVista('instrumentos'); }}>Consultar instrumento</button>
+              <button style={styles.dropdownOption} onClick={() => { setOperacionInstrumentos('actualizar'); cambiarVista('instrumentos'); }}>Actualizar instrumento</button>
+              <button style={styles.dropdownOption} onClick={() => { setOperacionInstrumentos('eliminar'); cambiarVista('instrumentos'); }}>Eliminar instrumento</button>
             </div>
           )}
         </div>
 
         <div style={styles.menuWrapper}>
-          <button
-            style={styles.navMenuBtn(menuDesplegado === 'accesorio')}
-            onClick={(e) => toggleMenu(e, 'accesorio')}
-          >
-            AccesorioInstrumentoCuerda <span style={{ fontSize: '9px', marginLeft: '4px' }}>▼</span>
+          <button type="button" style={styles.navMenuBtn(menuDesplegado === 'viento')} onClick={(e) => toggleMenu(e, 'viento')}>
+            Instrumentos de viento <span style={{ fontSize: '9px', marginLeft: '4px' }}>▼</span>
+          </button>
+          {menuDesplegado === 'viento' && (
+            <div style={styles.dropdownMenu}>
+              <button style={styles.dropdownOption} onClick={() => cambiarVista('viento')}>Módulo no disponible en esta versión</button>
+            </div>
+          )}
+        </div>
+
+        <div style={styles.menuWrapper}>
+          <button type="button" style={styles.navMenuBtn(menuDesplegado === 'accesorio')} onClick={(e) => toggleMenu(e, 'accesorio')}>
+            Accesorios de cuerda <span style={{ fontSize: '9px', marginLeft: '4px' }}>▼</span>
           </button>
           {menuDesplegado === 'accesorio' && (
             <div style={styles.dropdownMenu}>
-              <button style={styles.dropdownOption} onClick={() => cambiarVista('adicionar')}>
-                 Adicionar Accesorio
-              </button>
-              <button style={styles.dropdownOption} onClick={() => cambiarVista('eliminar')}>
-                 Eliminar Accesorio
-              </button>
-              <button style={styles.dropdownOption} onClick={() => cambiarVista('listar')}>
-                 Listar Accesorio
-              </button>
-              <button style={styles.dropdownOption} onClick={() => cambiarVista('actualizar')}>
-                 Actualizar Accesorio
-              </button>
-              <button style={styles.dropdownOption} onClick={() => cambiarVista('consultar')}>
-                 Consulta Accesorio
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div style={styles.menuWrapper}>
-          <button
-            style={styles.navMenuBtn(menuDesplegado === 'ayuda')}
-            onClick={(e) => toggleMenu(e, 'ayuda')}
-          >
-            Ayuda <span style={{ fontSize: '9px', marginLeft: '4px' }}>▼</span>
-          </button>
-          {menuDesplegado === 'ayuda' && (
-            <div style={styles.dropdownMenu}>
-              <button style={styles.dropdownOption} onClick={() => alert('Desarrollado por Juan Jose Cossio, Armando Antonio Lopez, Daniel Ayala y Sebastian Londoño.\n\n© 2026 Todos los derechos reservados.')}>
-                <span>ℹ</span> Acerca de...
-              </button>
+              <button style={styles.dropdownOption} onClick={() => cambiarVista('adicionar')}>Adicionar accesorio</button>
+              <button style={styles.dropdownOption} onClick={() => cambiarVista('listar')}>Listar accesorios</button>
+              <button style={styles.dropdownOption} onClick={() => cambiarVista('consultar')}>Consultar accesorio</button>
+              <button style={styles.dropdownOption} onClick={() => cambiarVista('actualizar')}>Actualizar accesorio</button>
+              <button style={styles.dropdownOption} onClick={() => cambiarVista('eliminar')}>Eliminar accesorio</button>
             </div>
           )}
         </div>
       </nav>
+      </>}
 
-      {/* 3. ÁREA DE CONTENIDO DINÁMICO */}
-      <main style={styles.contentArea}>
+      {/* Área de contenido de la operación seleccionada en el menú principal */}
+      <main style={embebido ? styles.embeddedContentArea : styles.contentArea}>
         {vistaActual === 'inicio' && <VistaInicio />}
 
         {vistaActual === 'adicionar' && (
@@ -309,17 +312,29 @@ export default function App() {
             onEliminar={handleEliminar}
           />
         )}
+
+        {vistaActual === 'instrumentos' && (
+          <div style={styles.instrumentosWrapper}>
+            <InstrumentosCRUD operacion={operacionInstrumentos} />
+          </div>
+        )}
+
+        {vistaActual === 'viento' && (
+          <div style={{ ...styles.instrumentosWrapper, padding: '28px' }}>
+            <h2 style={{ marginTop: 0, color: '#0f172a' }}>Instrumentos de viento</h2>
+            <p style={{ color: '#475569', lineHeight: 1.6 }}>Este módulo se conserva en la navegación, pero no está disponible porque el servidor actual solo ofrece operaciones para instrumentos de cuerda y accesorios de cuerda.</p>
+          </div>
+        )}
       </main>
 
-      {/* 4. BARRA DE ESTADO INFERIOR */}
-      <footer style={styles.statusBar}>
+      {!embebido && <footer style={styles.statusBar}>
         <div style={styles.statusSection}>
           <span style={styles.statusDot} /> Vista Activa: <strong>{vistaActual.toUpperCase()}</strong>
         </div>
         <div style={styles.statusSection}>
           Registros en Base de Datos: <strong>{accesorios.length}</strong>
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }
@@ -333,11 +348,11 @@ function VistaInicio() {
     <div style={styles.welcomeContainer}>
       <div style={styles.welcomeBanner}>
         <h1 style={styles.welcomeTitle}>Bienvenido a la tienda de Instrumentos</h1>
-        <p style={styles.welcomeSubtitle}>Módulo de Gestión de Accesorios de Cuerda</p>
+        <p style={styles.welcomeSubtitle}>Gestión de instrumentos de cuerda y accesorios</p>
       </div>
       <div style={styles.welcomeCard}>
         <p style={styles.welcomeText}>¡Qué gusto verte por aquí! Tómate tu tiempo y siéntete como en casa.</p>
-        <p style={styles.welcomeHint}>Selecciona una opción del menú superior <strong>AccesorioInstrumentoCuerda</strong> para comenzar.</p>
+        <p style={styles.welcomeHint}>Selecciona una opción del menú superior para administrar instrumentos de cuerda o accesorios.</p>
       </div>
     </div>
   );
@@ -777,6 +792,12 @@ function TablaGeneral({ lista = false }) {
 // -----------------------------------------------------------------------------
 
 const styles = {
+  instrumentosWrapper: { backgroundColor: '#ffffff', minHeight: '420px', padding: '8px 0' },
+  embeddedFrame: {
+    width: '100%', minHeight: '420px', backgroundColor: '#fff', color: '#0f172a',
+    fontFamily: '-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif'
+  },
+  embeddedContentArea: { padding: '20px', minHeight: '420px', boxSizing: 'border-box', color: '#0f172a' },
   windowFrame: {
     maxWidth: '1050px',
     margin: '20px auto',

@@ -52,7 +52,7 @@ namespace POCInstrumentoCuerda
     {
         var input = new InstrumentoInput
         {
-            id = ParseId(instrumentoEncontrado.id),
+            id = instrumentoEncontrado.id,
             nombre = Required(txtNombre.Text, "Nombre"),
             precio = ParseDouble(txtPrecio.Text, "Precio"),
             fechaVenta = txtFechaVenta.Value.ToString("yyyy-MM-dd"),

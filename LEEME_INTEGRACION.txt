@@ -1,0 +1,29 @@
+PROYECTO VENTA DE INSTRUMENTOS MUSICALES — CLIENTES CON GRAPHQL
+
+Diseño de la interfaz
+---------------------
+Los clientes siguen el patrón visual del proyecto original sin microservicios: barra de acceso superior y una ventana independiente para cada operación del CRUD.
+
+Cliente C# (Windows Forms)
+- Abre Cliente-C#/ClienteInstrumentoCuerda/ClienteInstrumentoCuerda.slnx o POCInstrumentoCuerda/POCInstrumentoCuerda.csproj.
+- La barra principal contiene Inicio, Acerca de, Instrumentos de cuerda, Instrumentos de viento y Accesorios de cuerda.
+- Los menús de instrumentos de cuerda y accesorios tienen opciones separadas para adicionar, listar, consultar, actualizar y eliminar. Cada opción abre una ventana propia.
+- El servidor actual no ofrece operaciones de instrumentos de viento. Se conserva esa categoría de navegación, con una nota explícita en vez de mostrar un CRUD que no podría conectarse.
+
+Cliente React
+- Abre Cliente-React/cliente-react.
+- Ejecuta npm install y después npm run dev.
+- La barra superior usa las mismas categorías del cliente Windows Forms. Cada opción CRUD abre una ventana modal independiente con su operación.
+- Los módulos React usan el endpoint http://localhost:8081/graphql.
+
+Servidor
+- Ejecuta el proyecto Spring Boot desde Servidor/ServidorInstrumentoCuerda.
+- El endpoint GraphQL esperado por los clientes es http://localhost:8081/graphql.
+
+Alcance
+-------
+El esquema GraphQL de esta versión expone instrumentos de cuerda y accesorios de cuerda. No se añadieron operaciones ficticias de instrumentos de viento porque el servidor no tiene esos tipos ni mutaciones.
+
+Nota de validación
+------------------
+Se validó el análisis sintáctico JSX de App.jsx, AccesorioCRUD.jsx e InstrumentosCRUD.jsx. La compilación Vite no pudo ejecutarse en este entorno porque falta el binding nativo opcional de Rolldown. No se dispone de MSBuild/.NET Framework para compilar Windows Forms aquí; se recomienda recompilar el proyecto en Visual Studio.

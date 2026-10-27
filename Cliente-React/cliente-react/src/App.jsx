@@ -1,12 +1,6 @@
 import React from 'react';
 import AccesorioCRUD from './componentes/AccesorioCRUD';
 
-function App() {
-  return (
-    <div>
-      <AccesorioCRUD />
-    </div>
-  );
+export default function App() {
+  return <AccesorioCRUD />;
 }
-
-export default App;

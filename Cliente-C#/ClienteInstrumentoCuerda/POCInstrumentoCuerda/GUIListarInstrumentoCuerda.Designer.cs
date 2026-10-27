@@ -35,6 +35,7 @@
             this.tableFechaVenta = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.tableNumeroTrastes = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.tableNumeroCuerdas = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.tableAccesoriosVinculados = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.btnListar = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.tableInstrumentosCuerda)).BeginInit();
@@ -50,12 +51,13 @@
             this.tablePrecio,
             this.tableFechaVenta,
             this.tableNumeroTrastes,
-            this.tableNumeroCuerdas});
+            this.tableNumeroCuerdas,
+            this.tableAccesoriosVinculados});
             this.tableInstrumentosCuerda.GridColor = System.Drawing.SystemColors.ControlDarkDark;
             this.tableInstrumentosCuerda.Location = new System.Drawing.Point(71, 135);
             this.tableInstrumentosCuerda.Name = "tableInstrumentosCuerda";
             this.tableInstrumentosCuerda.RowHeadersWidth = 51;
-            this.tableInstrumentosCuerda.Size = new System.Drawing.Size(801, 315);
+            this.tableInstrumentosCuerda.Size = new System.Drawing.Size(860, 315);
             this.tableInstrumentosCuerda.TabIndex = 0;
             this.tableInstrumentosCuerda.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             // 
@@ -101,6 +103,13 @@
             this.tableNumeroCuerdas.Name = "tableNumeroCuerdas";
             this.tableNumeroCuerdas.Width = 125;
             // 
+            // tableAccesoriosVinculados
+            // 
+            this.tableAccesoriosVinculados.HeaderText = "IDs de accesorios vinculados";
+            this.tableAccesoriosVinculados.MinimumWidth = 6;
+            this.tableAccesoriosVinculados.Name = "tableAccesoriosVinculados";
+            this.tableAccesoriosVinculados.Width = 180;
+            // 
             // btnListar
             // 
             this.btnListar.BackColor = System.Drawing.Color.DarkBlue;
@@ -129,7 +138,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.ClientSize = new System.Drawing.Size(972, 558);
+            this.ClientSize = new System.Drawing.Size(1030, 558);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.btnListar);
             this.Controls.Add(this.tableInstrumentosCuerda);
@@ -150,6 +159,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn tableFechaVenta;
         private System.Windows.Forms.DataGridViewTextBoxColumn tableNumeroTrastes;
         private System.Windows.Forms.DataGridViewTextBoxColumn tableNumeroCuerdas;
+        private System.Windows.Forms.DataGridViewTextBoxColumn tableAccesoriosVinculados;
         private System.Windows.Forms.Button btnListar;
         private System.Windows.Forms.Label label1;
     }

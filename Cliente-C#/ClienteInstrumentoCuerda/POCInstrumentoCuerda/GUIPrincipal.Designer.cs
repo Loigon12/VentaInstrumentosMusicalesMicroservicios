@@ -1,4 +1,4 @@
-﻿namespace POCInstrumentoCuerda
+namespace POCInstrumentoCuerda
 {
     partial class GUIPrincipal
     {
@@ -224,7 +224,7 @@
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(289, 17);
             this.label3.TabIndex = 2;
-            this.label3.Text = "Modulo de gestión de Accesorios de cuerda ";
+            this.label3.Text = "Sistema de gestión de instrumentos musicales";
             this.label3.Click += new System.EventHandler(this.label3_Click);
             // 
             // label1

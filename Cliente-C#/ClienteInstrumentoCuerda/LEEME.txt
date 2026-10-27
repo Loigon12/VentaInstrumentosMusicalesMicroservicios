@@ -1,0 +1,19 @@
+CLIENTE C# CORREGIDO - Venta de instrumentos musicales
+
+Requisitos:
+- Windows
+- Visual Studio 2022 (recomendado) con desarrollo de escritorio .NET
+- .NET Framework 4.8 Developer Pack
+- Servidor GraphQL iniciado en http://localhost:8081/graphql
+
+Abrir:
+1. Abra ClienteInstrumentoCuerda.slnx si su Visual Studio lo admite, o abra directamente POCInstrumentoCuerda/POCInstrumentoCuerda.csproj.
+2. Restaure los paquetes NuGet si Visual Studio lo solicita. El proyecto incluye la carpeta packages original.
+3. Seleccione POCInstrumentoCuerda como proyecto de inicio y ejecute con F5.
+
+Correcciones realizadas:
+- Se agregaron GUIAccesorios.cs y model/AccesorioModels.cs al archivo de proyecto; faltaban en las inclusiones Compile y provocaban errores de compilación.
+- Se cambiaron los identificadores de instrumentos y accesorios a int, coherentes con los campos Int de GraphQL y con los modelos de entrada.
+- Se ajustaron las operaciones de actualización y eliminación para usar esos identificadores numéricos.
+
+Nota: El cliente es Windows Forms sobre .NET Framework 4.8, por lo que debe compilarse/ejecutarse en Windows. No se pudo ejecutar una compilación en este entorno, ya que no dispone de MSBuild/.NET Framework.

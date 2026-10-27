@@ -1,16 +1,17 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace POCInstrumentoCuerda.model
 {
     public class Instrumento
     {
-        [JsonPropertyName("id")] public string id { get; set; }
+        [JsonPropertyName("id"), JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)] public int id { get; set; }
         [JsonPropertyName("nombre")] public string nombre { get; set; }
         [JsonPropertyName("precio")] public double precio { get; set; }
         [JsonPropertyName("fechaVenta")] public string fechaVenta { get; set; }
         [JsonPropertyName("numeroCuerdas")] public int numeroCuerdas { get; set; }
         [JsonPropertyName("numeroTrastes")] public int numeroTrastes { get; set; }
+        [JsonPropertyName("accesorio")] public List<Accesorio> accesorio { get; set; } = new List<Accesorio>();
     }
 
     public class InstrumentoInput
