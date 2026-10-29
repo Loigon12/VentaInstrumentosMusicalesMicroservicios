@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import InstrumentosCRUD from './InstrumentosCRUD';
+import ConsultarInstrumentoCRUD from './ConsultarInstrumentoCRUD';
 
 // Enum de tipos de accesorio para coincidir EXACTAMENTE con el schema.graphqls
 export const TipoAccesorio = Object.freeze({
@@ -13,42 +14,56 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
   const [menuDesplegado, setMenuDesplegado] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
   const [operacionInstrumentos, setOperacionInstrumentos] = useState('listar');
+  const [aviso, setAviso] = useState(null);
 
-  // 1. CARGAR ACCESORIOS (Query)
-  useEffect(() => {
-    const cargarAccesorios = async () => {
-      try {
-        const response = await fetch('http://localhost:8081/graphql', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              query {
-                accesorio {
-                  id
-                  nombre
-                  tipo
-                  precio
-                  marca
-                  idInstrumento
-                }
-              }
-            `
-          })
-        });
-        const result = await response.json();
-        if (!response.ok || result.errors?.length) {
-          throw new Error(result.errors?.map(e => e.message).join('\n') || 'Error HTTP al consultar accesorios.');
-        }
-        if (result.data && result.data.accesorio) {
-          setAccesorios(result.data.accesorio);
-        }
-      } catch (error) {
-        console.error("Error al conectar con el servidor GraphQL:", error);
-      }
-    };
-    cargarAccesorios();
+  // 1. CONSULTAR ACCESORIOS (Query GraphQL reutilizable)
+  const obtenerAccesorios = React.useCallback(async () => {
+    const response = await fetch('http://localhost:8081/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          query {
+            accesorio {
+              id
+              nombre
+              tipo
+              precio
+              marca
+              idInstrumento
+            }
+          }
+        `
+      })
+    });
+    const result = await response.json();
+    if (!response.ok || result.errors?.length) {
+      throw new Error(result.errors?.map(e => e.message).join('\n') || 'Error HTTP al consultar accesorios.');
+    }
+    return result.data?.accesorio ?? [];
   }, []);
+
+  useEffect(() => {
+    let activo = true;
+    obtenerAccesorios()
+      .then(lista => { if (activo) setAccesorios(lista); })
+      .catch(error => {
+        console.error("Error al conectar con el servidor GraphQL:", error);
+        if (activo) setAviso({ tipo: 'error', texto: `No se pudieron cargar los accesorios: ${error.message}` });
+      });
+    return () => { activo = false; };
+  }, [obtenerAccesorios]);
+
+  // Recarga manual desde el servidor (botón del panel de listado).
+  const recargarAccesorios = async () => {
+    try {
+      setAccesorios(await obtenerAccesorios());
+      setAviso({ tipo: 'exito', texto: 'Lista de accesorios actualizada desde el servidor.' });
+    } catch (error) {
+      console.error("Error al conectar con el servidor GraphQL:", error);
+      setAviso({ tipo: 'error', texto: `No se pudieron cargar los accesorios: ${error.message}` });
+    }
+  };
 
   const cerrarMenus = () => setMenuDesplegado(null);
 
@@ -61,6 +76,8 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
     setVistaActual(vista);
     setMenuDesplegado(null);
   };
+
+  const esVistaAccesorio = ['adicionar', 'listar', 'consultar', 'actualizar', 'eliminar'].includes(vistaActual);
 
   // 2. ADICIONAR ACCESORIO (Mutation)
   const handleAdicionar = async (nuevo) => {
@@ -97,7 +114,8 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       const result = await response.json();
       if (!response.ok || result.errors?.length) {
         console.error("Error de GraphQL:", result.errors);
-        alert("Error al guardar: Revisa la consola para más detalles.");
+        const errMsg = result.errors ? result.errors.map(e => e.message).join("\n") : "Error HTTP en el servidor"; alert("Error al guardar: " + errMsg);
+        setAviso({ tipo: 'error', texto: `No se pudo adicionar el accesorio: ${errMsg}` });
         return;
       }
 
@@ -105,9 +123,11 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       const creado = result.data?.addAccesorio;
       if (!creado) throw new Error('El servidor no devolvió el accesorio creado.');
       setAccesorios(prev => [...prev.filter(a => String(a.id) !== String(creado.id)), creado]);
+      setAviso({ tipo: 'exito', texto: 'Accesorio adicionado correctamente.' });
       cambiarVista('listar');
     } catch (error) {
       console.error("Error al guardar en el servidor:", error);
+      setAviso({ tipo: 'error', texto: `No se pudo adicionar el accesorio: ${error.message}` });
     }
   };
 
@@ -135,20 +155,18 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         const result = await response.json();
         if (!response.ok || result.errors?.length) {
           console.error("Error de GraphQL:", result.errors);
-          alert("Error al eliminar de la base de datos.");
+          const errMsg = result.errors ? result.errors.map(e => e.message).join("\n") : "Error HTTP al eliminar"; alert("Error al eliminar: " + errMsg);
+          setAviso({ tipo: 'error', texto: `No se pudo eliminar el accesorio: ${errMsg}` });
           return;
         }
         
         setAccesorios(accesorios.filter(a => String(a.id) !== String(id)));
+        setAviso({ tipo: 'exito', texto: `Accesorio #${id} eliminado correctamente.` });
       } catch (error) {
         console.error("Error al eliminar en el servidor:", error);
+        setAviso({ tipo: 'error', texto: `No se pudo eliminar el accesorio: ${error.message}` });
       }
     }
-  };
-
-  const handleIniciarEdicion = (item) => {
-    setEditandoId(item.id);
-    cambiarVista('actualizar');
   };
 
   // 4. ACTUALIZAR ACCESORIO (Mutation)
@@ -186,7 +204,8 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       const result = await response.json();
       if (!response.ok || result.errors?.length) {
         console.error("Error de GraphQL:", result.errors);
-        alert("Error al actualizar en la base de datos.");
+        const errMsg = result.errors ? result.errors.map(e => e.message).join("\n") : "Error HTTP al actualizar"; alert("Error al actualizar: " + errMsg);
+        setAviso({ tipo: 'error', texto: `No se pudo actualizar el accesorio: ${errMsg}` });
         return;
       }
       
@@ -195,10 +214,12 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       setAccesorios(prev => prev.map(a => String(a.id) === String(actualizado.id)
         ? { ...a, ...accesorioActualizado, ...actualizado }
         : a));
+      setAviso({ tipo: 'exito', texto: `Accesorio #${actualizado.id} actualizado correctamente.` });
       setEditandoId(null);
       cambiarVista('listar');
     } catch (error) {
       console.error("Error al actualizar en el servidor:", error);
+      setAviso({ tipo: 'error', texto: `No se pudo actualizar el accesorio: ${error.message}` });
     }
   };
 
@@ -272,6 +293,15 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
 
       {/* Área de contenido de la operación seleccionada en el menú principal */}
       <main style={embebido ? styles.embeddedContentArea : styles.contentArea}>
+        {esVistaAccesorio && aviso && (
+          <div
+            role={aviso.tipo === 'error' ? 'alert' : 'status'}
+            style={aviso.tipo === 'error' ? styles.errorBox : styles.successBox}
+          >
+            {aviso.texto}
+          </div>
+        )}
+
         {vistaActual === 'inicio' && <VistaInicio />}
 
         {vistaActual === 'adicionar' && (
@@ -292,6 +322,8 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         {vistaActual === 'listar' && (
           <VistaListar
             accesorios={accesorios}
+            onRecargar={recargarAccesorios}
+            onEliminar={handleEliminar}
           />
         )}
 
@@ -308,14 +340,17 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         {vistaActual === 'consultar' && (
           <VistaConsultar
             accesorios={accesorios}
-            onEditar={handleIniciarEdicion}
             onEliminar={handleEliminar}
           />
         )}
 
         {vistaActual === 'instrumentos' && (
           <div style={styles.instrumentosWrapper}>
-            <InstrumentosCRUD operacion={operacionInstrumentos} />
+            {operacionInstrumentos === 'consultar' ? (
+              <ConsultarInstrumentoCRUD />
+            ) : (
+              <InstrumentosCRUD operacion={operacionInstrumentos} />
+            )}
           </div>
         )}
 
@@ -475,7 +510,19 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
 
 function VistaEliminar({ accesorios, onEliminar }) {
   const [idBuscar, setIdBuscar] = useState('');
-  const accesorioEncontrado = accesorios.find(a => a.id.toString() === idBuscar.trim());
+  const [idConfirmado, setIdConfirmado] = useState('');
+  const accesorioEncontrado = accesorios.find(a => a.id.toString() === idConfirmado.trim());
+
+  const buscarParaEliminar = () => {
+    setIdConfirmado(idBuscar.trim());
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      buscarParaEliminar();
+    }
+  };
 
   return (
     <div style={styles.cardContainer}>
@@ -485,18 +532,21 @@ function VistaEliminar({ accesorios, onEliminar }) {
 
       <div style={styles.filterCard}>
         <label style={styles.label}>Buscar por ID para eliminar:</label>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '6px', alignItems: 'center' }}>
           <input
             type="number"
             placeholder="Ingrese ID..."
             value={idBuscar}
             onChange={e => setIdBuscar(e.target.value)}
+            onKeyDown={handleKeyDown}
             style={{ ...styles.input, maxWidth: '240px' }}
           />
+          <button type="button" onClick={buscarParaEliminar} style={styles.btnPrimary}>Buscar ID</button>
+          <button type="button" onClick={() => { setIdBuscar(''); setIdConfirmado(''); }} style={styles.btnSecondary}>Limpiar</button>
         </div>
       </div>
 
-      {idBuscar !== '' && (
+      {idConfirmado !== '' && (
         <div style={{ marginTop: '16px' }}>
           {accesorioEncontrado ? (
             <div style={styles.deleteConfirmBox}>
@@ -506,32 +556,51 @@ function VistaEliminar({ accesorios, onEliminar }) {
               <p style={styles.detailText}><strong>Marca:</strong> {accesorioEncontrado.marca}</p>
               <p style={styles.detailText}><strong>Precio:</strong> ${accesorioEncontrado.precio.toFixed(2)}</p>
               <button
-                onClick={() => { onEliminar(accesorioEncontrado.id); setIdBuscar(''); }}
+                onClick={() => { onEliminar(accesorioEncontrado.id); setIdBuscar(''); setIdConfirmado(''); }}
                 style={styles.btnDanger}
               >
                  Confirmar Eliminación Permanente
               </button>
             </div>
           ) : (
-            <div style={styles.notFoundBox}>No se encontró ningún registro con el ID "{idBuscar}".</div>
+            <div style={styles.notFoundBox}>No se encontró ningún registro con el ID "{idConfirmado}".</div>
           )}
         </div>
       )}
 
       <h3 style={{ marginTop: '28px', fontSize: '13px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tabla de eliminación directa:</h3>
-      <TablaGeneral lista={accesorios} onEliminar={onEliminar} soloEliminar />
+      <TablaGeneral lista={accesorios} onEliminar={onEliminar} />
     </div>
   );
 }
 
-function VistaListar({ accesorios }) {
-  const [filtros, setFiltros] = useState({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
+function VistaListar({ accesorios, onRecargar, onEliminar }) {
+  const [inputs, setInputs] = useState({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
+  const [filtrosAplicados, setFiltrosAplicados] = useState({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
+
+  const aplicarFiltros = () => {
+    setFiltrosAplicados({ ...inputs });
+  };
+
+  const limpiarFiltros = () => {
+    const vacio = { nombre: '', tipo: '', marca: '', idInstrumento: '' };
+    setInputs(vacio);
+    setFiltrosAplicados(vacio);
+    if (onRecargar) onRecargar();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      aplicarFiltros();
+    }
+  };
 
   const filtrados = accesorios.filter(a => {
-    const matchNombre = a.nombre.toLowerCase().includes(filtros.nombre.toLowerCase());
-    const matchTipo = filtros.tipo === '' || a.tipo === filtros.tipo;
-    const matchMarca = a.marca.toLowerCase().includes(filtros.marca.toLowerCase());
-    const matchInst = filtros.idInstrumento === '' || a.idInstrumento.toString() === filtros.idInstrumento;
+    const matchNombre = a.nombre.toLowerCase().includes(filtrosAplicados.nombre.toLowerCase());
+    const matchTipo = filtrosAplicados.tipo === '' || a.tipo === filtrosAplicados.tipo;
+    const matchMarca = a.marca.toLowerCase().includes(filtrosAplicados.marca.toLowerCase());
+    const matchInst = filtrosAplicados.idInstrumento === '' || a.idInstrumento.toString() === filtrosAplicados.idInstrumento;
     return matchNombre && matchTipo && matchMarca && matchInst;
   });
 
@@ -547,13 +616,14 @@ function VistaListar({ accesorios }) {
           <input
             type="text"
             placeholder="Filtrar por Nombre..."
-            value={filtros.nombre}
-            onChange={e => setFiltros({ ...filtros, nombre: e.target.value })}
+            value={inputs.nombre}
+            onChange={e => setInputs({ ...inputs, nombre: e.target.value })}
+            onKeyDown={handleKeyDown}
             style={styles.input}
           />
           <select
-            value={filtros.tipo}
-            onChange={e => setFiltros({ ...filtros, tipo: e.target.value })}
+            value={inputs.tipo}
+            onChange={e => setInputs({ ...inputs, tipo: e.target.value })}
             style={styles.select}
           >
             <option value="">-- Todos los Tipos --</option>
@@ -562,27 +632,35 @@ function VistaListar({ accesorios }) {
           <input
             type="text"
             placeholder="Filtrar Marca..."
-            value={filtros.marca}
-            onChange={e => setFiltros({ ...filtros, marca: e.target.value })}
+            value={inputs.marca}
+            onChange={e => setInputs({ ...inputs, marca: e.target.value })}
+            onKeyDown={handleKeyDown}
             style={styles.input}
           />
           <input
             type="number"
             placeholder="ID Instrumento..."
-            value={filtros.idInstrumento}
-            onChange={e => setFiltros({ ...filtros, idInstrumento: e.target.value })}
+            value={inputs.idInstrumento}
+            onChange={e => setInputs({ ...inputs, idInstrumento: e.target.value })}
+            onKeyDown={handleKeyDown}
             style={styles.input}
           />
         </div>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
+          <button type="button" onClick={aplicarFiltros} style={styles.btnPrimary}>Buscar / Filtrar</button>
+          <button type="button" onClick={limpiarFiltros} style={styles.btnSecondary}>Mostrar todos / Limpiar</button>
+          {onRecargar && <button type="button" onClick={onRecargar} style={styles.btnSecondary}>Actualizar desde servidor</button>}
+        </div>
       </div>
 
-      <TablaGeneral lista={filtrados}/>
+      <TablaGeneral lista={filtrados} onEliminar={onEliminar}/>
     </div>
   );
 }
 
 function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, onCancelar }) {
-  const accesorioSeleccionado = accesorios.find(a => a.id === editandoId);
+  const [tempId, setTempId] = useState(editandoId ?? '');
+  const accesorioSeleccionado = accesorios.find(a => String(a.id) === String(editandoId));
 
   const [form, setForm] = useState(accesorioSeleccionado || {
     id: '',
@@ -596,8 +674,20 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
   React.useEffect(() => {
     if (accesorioSeleccionado) {
       setForm(accesorioSeleccionado);
+      setTempId(accesorioSeleccionado.id);
     }
   }, [editandoId, accesorioSeleccionado]);
+
+  const buscarParaEditar = () => {
+    onSeleccionarId(tempId ? parseInt(tempId) : null);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      buscarParaEditar();
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -617,13 +707,18 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
 
       <div style={styles.filterCard}>
         <label style={styles.label}>Ingrese el ID a editar:</label>
-        <input
-          type="number"
-          placeholder="Ej: 1"
-          value={editandoId || ''}
-          onChange={e => onSeleccionarId(e.target.value ? parseInt(e.target.value) : null)}
-          style={{ ...styles.input, maxWidth: '320px', marginTop: '6px', display: 'block' }}
-        />
+        <div style={{ display: 'flex', gap: '10px', marginTop: '6px', alignItems: 'center' }}>
+          <input
+            type="number"
+            placeholder="Ej: 1"
+            value={tempId}
+            onChange={e => setTempId(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={{ ...styles.input, maxWidth: '240px' }}
+          />
+          <button type="button" onClick={buscarParaEditar} style={styles.btnPrimary}>Buscar ID</button>
+          <button type="button" onClick={() => { setTempId(''); onSeleccionarId(null); }} style={styles.btnSecondary}>Limpiar</button>
+        </div>
       </div>
 
       {accesorioSeleccionado ? (
@@ -691,19 +786,36 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
           </div>
         </form>
       ) : (
-        <div style={styles.emptyPrompt}>Ingrese un ID válido en el campo superior para cargar el formulario de edición.</div>
+        <div style={styles.emptyPrompt}>Ingrese un ID válido en el campo superior y presione 'Buscar ID' (o Enter) para cargar el formulario de edición.</div>
       )}
     </div>
   );
 }
 
-function VistaConsultar({ accesorios }) {
-  const [consulta, setConsulta] = useState({ id: '', nombre: '' });
+function VistaConsultar({ accesorios, onEliminar }) {
+  const [inputs, setInputs] = useState({ id: '', nombre: '' });
+  const [consultaActiva, setConsultaActiva] = useState({ id: '', nombre: '' });
+
+  const ejecutarConsulta = () => {
+    setConsultaActiva({ ...inputs });
+  };
+
+  const limpiarConsulta = () => {
+    setInputs({ id: '', nombre: '' });
+    setConsultaActiva({ id: '', nombre: '' });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      ejecutarConsulta();
+    }
+  };
 
   const resultados = accesorios.filter(a => {
-    const matchId = consulta.id === '' || a.id.toString() === consulta.id;
-    const matchNombre = consulta.nombre === '' || a.nombre.toLowerCase().includes(consulta.nombre.toLowerCase());
-    return (consulta.id !== '' || consulta.nombre !== '') && matchId && matchNombre;
+    const matchId = consultaActiva.id === '' || a.id.toString() === consultaActiva.id.trim();
+    const matchNombre = consultaActiva.nombre === '' || a.nombre.toLowerCase().includes(consultaActiva.nombre.trim().toLowerCase());
+    return (consultaActiva.id !== '' || consultaActiva.nombre !== '') && matchId && matchNombre;
   });
 
   return (
@@ -719,8 +831,9 @@ function VistaConsultar({ accesorios }) {
             <input
               type="number"
               placeholder="Ej: 1"
-              value={consulta.id}
-              onChange={e => setConsulta({ ...consulta, id: e.target.value })}
+              value={inputs.id}
+              onChange={e => setInputs({ ...inputs, id: e.target.value })}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
@@ -729,18 +842,23 @@ function VistaConsultar({ accesorios }) {
             <input
               type="text"
               placeholder="Ej: Cuerdas..."
-              value={consulta.nombre}
-              onChange={e => setConsulta({ ...consulta, nombre: e.target.value })}
+              value={inputs.nombre}
+              onChange={e => setInputs({ ...inputs, nombre: e.target.value })}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
         </div>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
+          <button type="button" onClick={ejecutarConsulta} style={styles.btnPrimary}>Consultar</button>
+          <button type="button" onClick={limpiarConsulta} style={styles.btnSecondary}>Limpiar</button>
+        </div>
       </div>
 
-      {consulta.id === '' && consulta.nombre === '' ? (
-        <div style={styles.emptyPrompt}> Ingrese un ID o un nombre en el panel superior para realizar la consulta.</div>
+      {consultaActiva.id === '' && consultaActiva.nombre === '' ? (
+        <div style={styles.emptyPrompt}> Ingrese un ID o un nombre y presione Consultar (o Enter) para realizar la búsqueda.</div>
       ) : (
-        <TablaGeneral lista={resultados} />
+        <TablaGeneral lista={resultados} onEliminar={onEliminar} />
       )}
     </div>
   );
@@ -750,7 +868,7 @@ function VistaConsultar({ accesorios }) {
 // TABLA REUTILIZABLE CON DISEÑO DATA GRID MODERNO
 // -----------------------------------------------------------------------------
 
-function TablaGeneral({ lista = false }) {
+function TablaGeneral({ lista = [], onEliminar }) {
   if (lista.length === 0) {
     return <div style={styles.emptyPrompt}>No se encontraron registros que coincidan con los criterios o la base de datos está vacía.</div>;
   }
@@ -766,6 +884,7 @@ function TablaGeneral({ lista = false }) {
             <th style={styles.th}>Precio</th>
             <th style={styles.th}>Marca</th>
             <th style={styles.th}>ID Inst.</th>
+            {onEliminar && <th style={styles.th}>Acciones</th>}
           </tr>
         </thead>
         <tbody>
@@ -779,6 +898,15 @@ function TablaGeneral({ lista = false }) {
               <td style={styles.tdPrice}>${item.precio.toFixed(2)}</td>
               <td style={styles.td}>{item.marca}</td>
               <td style={styles.td}>#{item.idInstrumento}</td>
+              {onEliminar && (
+                <td style={styles.td}>
+                  <div style={styles.actionGroup}>
+                    <button type="button" style={styles.btnDangerSmall} onClick={() => onEliminar(item.id)}>
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -795,7 +923,7 @@ const styles = {
   instrumentosWrapper: { backgroundColor: '#ffffff', minHeight: '420px', padding: '8px 0' },
   embeddedFrame: {
     width: '100%', minHeight: '420px', backgroundColor: '#fff', color: '#0f172a',
-    fontFamily: '-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif'
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
   },
   embeddedContentArea: { padding: '20px', minHeight: '420px', boxSizing: 'border-box', color: '#0f172a' },
   windowFrame: {
@@ -1071,6 +1199,39 @@ const styles = {
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer'
+  },
+  btnDangerSmall: {
+    backgroundColor: '#b91c1c',
+    color: '#ffffff',
+    border: 'none',
+    padding: '6px 12px',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: '600',
+    cursor: 'pointer'
+  },
+  actionGroup: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap'
+  },
+  successBox: {
+    backgroundColor: '#e8f7ec',
+    color: '#166534',
+    border: '1px solid #86efac',
+    borderRadius: '8px',
+    padding: '12px 16px',
+    fontSize: '14px',
+    marginBottom: '16px'
+  },
+  errorBox: {
+    backgroundColor: '#ffe8e8',
+    color: '#8b0000',
+    border: '1px solid #fca5a5',
+    borderRadius: '8px',
+    padding: '12px 16px',
+    fontSize: '14px',
+    marginBottom: '16px'
   },
   deleteConfirmBox: {
     backgroundColor: '#fef2f2',
