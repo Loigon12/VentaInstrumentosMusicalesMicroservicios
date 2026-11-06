@@ -25,12 +25,18 @@ input InstrumentoInput {
 
 type Instrumento {
     id: ID
+    objectId: ID
     nombre: String
     precio: Float
     fechaVenta: String
     numeroCuerdas: Int
     numeroTrastes: Int
-    accesorio: [AccesorioCuerda]
+    accesorio: [AccesorioResumen]
+}
+
+# Dentro de Instrumento, cada accesorio vinculado solo muestra su id normal
+type AccesorioResumen {
+    id: ID
 }
 
 input AccesorioCuerdaInput {
@@ -44,11 +50,13 @@ input AccesorioCuerdaInput {
 
 type AccesorioCuerda {
     id: ID
+    objectId: ID
     nombre: String
     tipo: Tipo
     precio: Float
     marca: String
     idInstrumento: ID
+    objectIdInstrumento: ID
 }
 
 enum Tipo {

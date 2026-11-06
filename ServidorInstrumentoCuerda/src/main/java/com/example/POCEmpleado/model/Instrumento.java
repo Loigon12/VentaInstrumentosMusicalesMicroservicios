@@ -1,17 +1,30 @@
 package com.example.POCEmpleado.model;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
+
+@Document(collection = "instrumentos")
 public class Instrumento {
 
-    private int id;
+    // _id de MongoDB: ObjectId generado automaticamente al insertar
+    @Id
+    private String objectId;
+
+    // id de negocio: el que llega por GraphQL / cliente (se expone como "id" en el esquema)
+    @Indexed(unique = true)
+    private int codigo;
     private String nombre;
     private double precio;
     private LocalDate fechaVenta;
     private int numeroCuerdas;
     private int numeroTrastes;
-    private ArrayList<AccesorioCuerda> accesorios = new ArrayList<>();
+
+    // Constructor sin argumentos: lo usa Spring Data para reconstruir el documento leído de MongoDB
+    protected Instrumento() {
+    }
 
     public Instrumento(int id, String nombre) throws Exception {
         setId(id);
@@ -19,7 +32,7 @@ public class Instrumento {
     }
 
     public Instrumento(int id, String nombre, double precio, LocalDate fechaVenta, int numeroCuerdas, int numeroTrastes) throws Exception {
-        this.id = id;
+        this.codigo = id;
         this.nombre = nombre;
         setId(id);
         this.fechaVenta = fechaVenta;
@@ -42,12 +55,20 @@ public class Instrumento {
     }
 
     public int getId() {
-        return id;
+        return codigo;
+    }
+
+    public String getObjectId() {
+        return objectId;
+    }
+
+    public void setObjectId(String objectId) {
+        this.objectId = objectId;
     }
 
     public void setId(int id) throws Exception {
         if (id > 0) {
-            this.id = id;
+            this.codigo = id;
         } else {
             throw new Exception("Id menor a 0");
         }
@@ -95,17 +116,5 @@ public class Instrumento {
         } else {
             throw new Exception("Número de trastes menor a 0");
         }
-    }
-
-    public void addAccesorio(AccesorioCuerda accesorio) {
-        accesorios.add(accesorio);
-    }
-
-    public ArrayList<AccesorioCuerda> getAccesorio() {
-        return accesorios;
-    }
-
-    public void delAccesorio(AccesorioCuerda accesorio) {
-        accesorios.remove(accesorio);
     }
 }

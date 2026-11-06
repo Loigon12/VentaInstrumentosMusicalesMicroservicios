@@ -14,39 +14,39 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
   const [editandoId, setEditandoId] = useState(null);
   const [operacionInstrumentos, setOperacionInstrumentos] = useState('listar');
 
-  // 1. CARGAR ACCESORIOS (Query)
-  useEffect(() => {
-    const cargarAccesorios = async () => {
-      try {
-        const response = await fetch('http://localhost:8081/graphql', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              query {
-                accesorio {
-                  id
-                  nombre
-                  tipo
-                  precio
-                  marca
-                  idInstrumento
-                }
+  const cargarAccesorios = async () => {
+    try {
+      const response = await fetch('http://localhost:8081/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query {
+              accesorio {
+                id
+                nombre
+                tipo
+                precio
+                marca
+                idInstrumento
               }
-            `
-          })
-        });
-        const result = await response.json();
-        if (!response.ok || result.errors?.length) {
-          throw new Error(result.errors?.map(e => e.message).join('\n') || 'Error HTTP al consultar accesorios.');
-        }
-        if (result.data && result.data.accesorio) {
-          setAccesorios(result.data.accesorio);
-        }
-      } catch (error) {
-        console.error("Error al conectar con el servidor GraphQL:", error);
+            }
+          `
+        })
+      });
+      const result = await response.json();
+      if (!response.ok || result.errors?.length) {
+        throw new Error(result.errors?.map(e => e.message).join('\n') || 'Error HTTP al consultar accesorios.');
       }
-    };
+      if (result.data && result.data.accesorio) {
+        setAccesorios(result.data.accesorio);
+      }
+    } catch (error) {
+      console.error("Error al conectar con el servidor GraphQL:", error);
+    }
+  };
+
+  useEffect(() => {
     cargarAccesorios();
   }, []);
 
@@ -60,9 +60,10 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
   const cambiarVista = (vista) => {
     setVistaActual(vista);
     setMenuDesplegado(null);
+    setEditandoId(null);
   };
 
-  // 2. ADICIONAR ACCESORIO (Mutation)
+  // ADICIONAR ACCESORIO (Mutation)
   const handleAdicionar = async (nuevo) => {
     try {   
       const response = await fetch('http://localhost:8081/graphql', {
@@ -83,12 +84,12 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
           `,
           variables: {
             input: {
-              id: nuevo.id.toString(), // Convertido a String porque schema pide ID!
+              id: nuevo.id.toString(), 
               nombre: nuevo.nombre,
-              tipo: nuevo.tipo, // Solo CUERDAPULSADA o CUERDAFROTADA
-              precio: parseFloat(nuevo.precio), // Float!
+              tipo: nuevo.tipo, 
+              precio: parseFloat(nuevo.precio), 
               marca: nuevo.marca,
-              idInstrumento: nuevo.idInstrumento.toString() // Convertido a String porque schema pide ID!
+              idInstrumento: nuevo.idInstrumento.toString() 
             }
           }
         })
@@ -101,7 +102,6 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         return;
       }
 
-      // Usar el registro devuelto por el servidor evita diferencias de tipo en los ID.
       const creado = result.data?.addAccesorio;
       if (!creado) throw new Error('El servidor no devolvió el accesorio creado.');
       setAccesorios(prev => [...prev.filter(a => String(a.id) !== String(creado.id)), creado]);
@@ -111,7 +111,7 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
     }
   };
 
-  // 3. ELIMINAR ACCESORIO (Mutation)
+  // ELIMINAR ACCESORIO (Mutation)
   const handleEliminar = async (id) => {
     if (window.confirm(`¿Está seguro de eliminar el accesorio con ID #${id}?`)) {
       try {
@@ -127,7 +127,7 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
               }
             `,
             variables: {
-              input: parseInt(id) // El esquema pide Int!
+              input: parseInt(id) 
             }
           })
         });
@@ -140,10 +140,13 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         }
         
         setAccesorios(accesorios.filter(a => String(a.id) !== String(id)));
+        return true; // Retorna true si fue exitoso
       } catch (error) {
         console.error("Error al eliminar en el servidor:", error);
+        return false;
       }
     }
+    return false;
   };
 
   const handleIniciarEdicion = (item) => {
@@ -151,7 +154,7 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
     cambiarVista('actualizar');
   };
 
-  // 4. ACTUALIZAR ACCESORIO (Mutation)
+  // ACTUALIZAR ACCESORIO (Mutation)
   const handleGuardarActualizacion = async (accesorioActualizado) => {
     try {
       const response = await fetch('http://localhost:8081/graphql', {
@@ -172,12 +175,12 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
           `,
           variables: {
             input: {
-              id: accesorioActualizado.id.toString(), // Convertido a String porque schema pide ID!
+              id: accesorioActualizado.id.toString(), 
               nombre: accesorioActualizado.nombre,
               tipo: accesorioActualizado.tipo,
               precio: parseFloat(accesorioActualizado.precio),
               marca: accesorioActualizado.marca,
-              idInstrumento: accesorioActualizado.idInstrumento.toString() // Convertido a String porque schema pide ID!
+              idInstrumento: accesorioActualizado.idInstrumento.toString() 
             }
           }
         })
@@ -192,9 +195,11 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       
       const actualizado = result.data?.editAccesorio;
       if (!actualizado) throw new Error('El servidor no devolvió el accesorio actualizado.');
+      
       setAccesorios(prev => prev.map(a => String(a.id) === String(actualizado.id)
         ? { ...a, ...accesorioActualizado, ...actualizado }
         : a));
+      
       setEditandoId(null);
       cambiarVista('listar');
     } catch (error) {
@@ -205,7 +210,6 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
   return (
     <div style={embebido ? styles.embeddedFrame : styles.windowFrame} onClick={cerrarMenus}>
       {!embebido && <>
-      {/* Barra de título de la ventana independiente */}
       <div style={styles.windowTitleBar}>
         <div style={styles.titleLeft}>
           <span style={styles.titleText}>Venta de Instrumentos Musicales</span>
@@ -217,10 +221,8 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         </div>
       </div>
 
-      {/* Navegación principal con el mismo estilo visual del cliente original */}
       <nav style={styles.navbar} onClick={(e) => e.stopPropagation()}>
         <button type="button" style={styles.navMenuBtn(false)} onClick={() => cambiarVista('inicio')}>Inicio</button>
-
         <button
           type="button"
           style={styles.navMenuBtn(false)}
@@ -270,7 +272,6 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       </nav>
       </>}
 
-      {/* Área de contenido de la operación seleccionada en el menú principal */}
       <main style={embebido ? styles.embeddedContentArea : styles.contentArea}>
         {vistaActual === 'inicio' && <VistaInicio />}
 
@@ -290,9 +291,7 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         )}
 
         {vistaActual === 'listar' && (
-          <VistaListar
-            accesorios={accesorios}
-          />
+          <VistaListar />
         )}
 
         {vistaActual === 'actualizar' && (
@@ -307,7 +306,6 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
 
         {vistaActual === 'consultar' && (
           <VistaConsultar
-            accesorios={accesorios}
             onEditar={handleIniciarEdicion}
             onEliminar={handleEliminar}
           />
@@ -362,7 +360,7 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
   const [form, setForm] = useState({
     id: '',
     nombre: '',
-    tipo: TipoAccesorio.CUERDAPULSADA, // Valor por defecto actualizado
+    tipo: TipoAccesorio.CUERDAPULSADA, 
     precio: '',
     marca: '',
     idInstrumento: ''
@@ -372,7 +370,6 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
     e.preventDefault();
     const idNum = form.id ? parseInt(form.id) : Date.now();
     
-    // Convertimos a Number para la validación local
     if (accesorios.some(a => parseInt(a.id) === idNum)) {
       alert('El ID ingresado ya existe. Por favor ingrese uno diferente.');
       return;
@@ -474,8 +471,28 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
 }
 
 function VistaEliminar({ accesorios, onEliminar }) {
-  const [idBuscar, setIdBuscar] = useState('');
-  const accesorioEncontrado = accesorios.find(a => a.id.toString() === idBuscar.trim());
+  const [idInput, setIdInput] = useState('');
+  const [accesorioEncontrado, setAccesorioEncontrado] = useState(null);
+  const [busquedaRealizada, setBusquedaRealizada] = useState(false);
+
+  const buscarParaEliminar = () => {
+    if (!idInput.trim()) {
+      alert("Por favor ingrese un ID para buscar.");
+      return;
+    }
+    const acc = accesorios.find(a => a.id.toString() === idInput.trim());
+    setAccesorioEncontrado(acc || null);
+    setBusquedaRealizada(true);
+  };
+
+  const confirmarEliminacion = async () => {
+    const exito = await onEliminar(accesorioEncontrado.id);
+    if (exito) {
+      setIdInput('');
+      setAccesorioEncontrado(null);
+      setBusquedaRealizada(false);
+    }
+  };
 
   return (
     <div style={styles.cardContainer}>
@@ -489,14 +506,15 @@ function VistaEliminar({ accesorios, onEliminar }) {
           <input
             type="number"
             placeholder="Ingrese ID..."
-            value={idBuscar}
-            onChange={e => setIdBuscar(e.target.value)}
+            value={idInput}
+            onChange={e => { setIdInput(e.target.value); setBusquedaRealizada(false); }}
             style={{ ...styles.input, maxWidth: '240px' }}
           />
+          <button onClick={buscarParaEliminar} style={styles.btnPrimary}>Buscar</button>
         </div>
       </div>
 
-      {idBuscar !== '' && (
+      {busquedaRealizada && (
         <div style={{ marginTop: '16px' }}>
           {accesorioEncontrado ? (
             <div style={styles.deleteConfirmBox}>
@@ -505,41 +523,103 @@ function VistaEliminar({ accesorios, onEliminar }) {
               <p style={styles.detailText}><strong>Nombre:</strong> {accesorioEncontrado.nombre}</p>
               <p style={styles.detailText}><strong>Marca:</strong> {accesorioEncontrado.marca}</p>
               <p style={styles.detailText}><strong>Precio:</strong> ${accesorioEncontrado.precio.toFixed(2)}</p>
-              <button
-                onClick={() => { onEliminar(accesorioEncontrado.id); setIdBuscar(''); }}
-                style={styles.btnDanger}
-              >
-                 Confirmar Eliminación Permanente
-              </button>
+              <div style={{ marginTop: '16px' }}>
+                <button
+                  onClick={confirmarEliminacion}
+                  style={styles.btnDanger}
+                >
+                  Confirmar Eliminación Permanente
+                </button>
+              </div>
             </div>
           ) : (
-            <div style={styles.notFoundBox}>No se encontró ningún registro con el ID "{idBuscar}".</div>
+            <div style={styles.notFoundBox}>No se encontró ningún registro con el ID "{idInput}".</div>
           )}
         </div>
       )}
 
       <h3 style={{ marginTop: '28px', fontSize: '13px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tabla de eliminación directa:</h3>
-      <TablaGeneral lista={accesorios} onEliminar={onEliminar} soloEliminar />
+      <TablaGeneral lista={accesorios} soloEliminar onEliminar={onEliminar} />
     </div>
   );
 }
 
-function VistaListar({ accesorios }) {
+// -----------------------------------------------------------------------------
+// VISTA LISTAR ACTUALIZADA (Petición GraphQL)
+// -----------------------------------------------------------------------------
+function VistaListar() {
+  const [datosCargados, setDatosCargados] = useState(false);
+  const [itemsMostrar, setItemsMostrar] = useState([]);
+  
   const [filtros, setFiltros] = useState({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
 
-  const filtrados = accesorios.filter(a => {
-    const matchNombre = a.nombre.toLowerCase().includes(filtros.nombre.toLowerCase());
-    const matchTipo = filtros.tipo === '' || a.tipo === filtros.tipo;
-    const matchMarca = a.marca.toLowerCase().includes(filtros.marca.toLowerCase());
-    const matchInst = filtros.idInstrumento === '' || a.idInstrumento.toString() === filtros.idInstrumento;
-    return matchNombre && matchTipo && matchMarca && matchInst;
-  });
+  useEffect(() => {
+    setDatosCargados(false);
+    setItemsMostrar([]);
+  }, []);
+
+  const fetchGraphQL = async () => {
+    try {
+      const response = await fetch('http://localhost:8081/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query {
+              accesorio {
+                id
+                nombre
+                tipo
+                precio
+                marca
+                idInstrumento
+              }
+            }
+          `
+        })
+      });
+      const result = await response.json();
+      if (!response.ok || result.errors) throw new Error("Error en GraphQL");
+      return result.data.accesorio || [];
+    } catch (error) {
+      console.error("Error al obtener datos:", error);
+      alert("Hubo un problema al conectar con el servidor GraphQL.");
+      return [];
+    }
+  };
+
+  const buscar = async () => {
+    if (!filtros.nombre && !filtros.tipo && !filtros.marca && !filtros.idInstrumento) {
+      alert("Por favor ingrese al menos un parámetro de búsqueda.");
+      return;
+    }
+    
+    // Petición real al backend
+    const todosLosAccesorios = await fetchGraphQL();
+    
+    // Filtrado en cliente de los datos devueltos por GraphQL
+    const filtrados = todosLosAccesorios.filter(a => {
+      const matchNombre = filtros.nombre === '' || a.nombre.toLowerCase().includes(filtros.nombre.toLowerCase());
+      const matchTipo = filtros.tipo === '' || a.tipo === filtros.tipo;
+      const matchMarca = filtros.marca === '' || a.marca.toLowerCase().includes(filtros.marca.toLowerCase());
+      const matchInst = filtros.idInstrumento === '' || a.idInstrumento.toString() === filtros.idInstrumento;
+      return matchNombre && matchTipo && matchMarca && matchInst;
+    });
+    setItemsMostrar(filtrados);
+    setDatosCargados(true);
+  };
+  const mostrarTodos = async () => {
+    setFiltros({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
+    const todosLosAccesorios = await fetchGraphQL();
+    setItemsMostrar(todosLosAccesorios);
+    setDatosCargados(true);
+  };
 
   return (
     <div>
       <div style={styles.headerBlock}>
-        <h2 style={styles.viewTitle}>Listar por Parámetros</h2>
-        <span style={{ fontSize: '12px', color: '#64748b' }}>{filtrados.length} elementos encontrados</span>
+        <h2 style={styles.viewTitle}>Listar Accesorios</h2>
+        {datosCargados && <span style={{ fontSize: '12px', color: '#64748b' }}>{itemsMostrar.length} elementos encontrados por GraphQL</span>}
       </div>
 
       <div style={styles.filterCard}>
@@ -574,17 +654,30 @@ function VistaListar({ accesorios }) {
             style={styles.input}
           />
         </div>
+        
+        <div style={{ ...styles.buttonRow, marginTop: '16px' }}>
+          <button style={styles.btnPrimary} onClick={buscar}>Buscar</button>
+          <button style={styles.btnSecondary} onClick={mostrarTodos}>Mostrar todos</button>
+        </div>
       </div>
 
-      <TablaGeneral lista={filtrados}/>
+      {datosCargados ? (
+        <TablaGeneral lista={itemsMostrar}/>
+      ) : (
+        <p style={{ color: '#64748b', fontStyle: 'italic', padding: '20px 0' }}>Haz clic en un botón de búsqueda para visualizar los registros desde GraphQL.</p>
+      )}
     </div>
   );
 }
 
+// -----------------------------------------------------------------------------
+// VISTA ACTUALIZAR (Requiere búsqueda previa)
+// -----------------------------------------------------------------------------
 function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, onCancelar }) {
+  const [idBuscado, setIdBuscado] = useState(editandoId || '');
   const accesorioSeleccionado = accesorios.find(a => a.id === editandoId);
 
-  const [form, setForm] = useState(accesorioSeleccionado || {
+  const [form, setForm] = useState({
     id: '',
     nombre: '',
     tipo: TipoAccesorio.CUERDAPULSADA,
@@ -596,8 +689,25 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
   React.useEffect(() => {
     if (accesorioSeleccionado) {
       setForm(accesorioSeleccionado);
+      setIdBuscado(accesorioSeleccionado.id);
     }
   }, [editandoId, accesorioSeleccionado]);
+
+  const buscarParaEditar = () => {
+    if (!idBuscado) {
+      alert("Ingrese un ID para buscar");
+      return;
+    }
+    const idParseado = parseInt(idBuscado);
+    const encontrado = accesorios.find(a => a.id === idParseado || a.id.toString() === idBuscado.toString());
+    
+    if (encontrado) {
+      onSeleccionarId(encontrado.id);
+    } else {
+      alert(`No se encontró ningún accesorio con el ID: ${idBuscado}`);
+      onSeleccionarId(null);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -617,13 +727,16 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
 
       <div style={styles.filterCard}>
         <label style={styles.label}>Ingrese el ID a editar:</label>
-        <input
-          type="number"
-          placeholder="Ej: 1"
-          value={editandoId || ''}
-          onChange={e => onSeleccionarId(e.target.value ? parseInt(e.target.value) : null)}
-          style={{ ...styles.input, maxWidth: '320px', marginTop: '6px', display: 'block' }}
-        />
+        <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+          <input
+            type="number"
+            placeholder="Ej: 1"
+            value={idBuscado}
+            onChange={e => setIdBuscado(e.target.value)}
+            style={{ ...styles.input, maxWidth: '240px' }}
+          />
+          <button onClick={buscarParaEditar} style={styles.btnPrimary}>Buscar</button>
+        </div>
       </div>
 
       {accesorioSeleccionado ? (
@@ -691,20 +804,69 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
           </div>
         </form>
       ) : (
-        <div style={styles.emptyPrompt}>Ingrese un ID válido en el campo superior para cargar el formulario de edición.</div>
+        <div style={styles.emptyPrompt}>Ingrese un ID válido en el campo superior y presione Buscar para cargar el formulario de edición.</div>
       )}
     </div>
   );
 }
 
-function VistaConsultar({ accesorios }) {
+// -----------------------------------------------------------------------------
+// VISTA CONSULTAR (Petición GraphQL)
+// -----------------------------------------------------------------------------
+function VistaConsultar() {
   const [consulta, setConsulta] = useState({ id: '', nombre: '' });
+  const [datosCargados, setDatosCargados] = useState(false);
+  const [resultados, setResultados] = useState([]);
 
-  const resultados = accesorios.filter(a => {
-    const matchId = consulta.id === '' || a.id.toString() === consulta.id;
-    const matchNombre = consulta.nombre === '' || a.nombre.toLowerCase().includes(consulta.nombre.toLowerCase());
-    return (consulta.id !== '' || consulta.nombre !== '') && matchId && matchNombre;
-  });
+  useEffect(() => {
+    setDatosCargados(false);
+    setResultados([]);
+  }, []);
+
+  const ejecutarConsulta = async () => {
+    if (consulta.id === '' && consulta.nombre === '') {
+      alert("Ingrese un ID o un nombre para buscar.");
+      return;
+    }
+    
+    try {
+      // Realizar la consulta a GraphQL en lugar de filtrar datos locales
+      const response = await fetch('http://localhost:8081/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query {
+              accesorio {
+                id
+                nombre
+                tipo
+                precio
+                marca
+                idInstrumento
+              }
+            }
+          `
+        })
+      });
+      const result = await response.json();
+      if (!response.ok || result.errors) throw new Error("Error en GraphQL");
+      
+      const todos = result.data.accesorio || [];
+      
+      const filtrados = todos.filter(a => {
+        const matchId = consulta.id === '' || a.id.toString() === consulta.id;
+        const matchNombre = consulta.nombre === '' || a.nombre.toLowerCase().includes(consulta.nombre.toLowerCase());
+        return matchId && matchNombre;
+      });
+      
+      setResultados(filtrados);
+      setDatosCargados(true);
+    } catch (error) {
+      console.error("Error al consultar:", error);
+      alert("No se pudo realizar la consulta al servidor.");
+    }
+  };
 
   return (
     <div>
@@ -735,10 +897,13 @@ function VistaConsultar({ accesorios }) {
             />
           </div>
         </div>
+        <div style={{ marginTop: '16px' }}>
+           <button style={styles.btnPrimary} onClick={ejecutarConsulta}>Consultar Servidor</button>
+        </div>
       </div>
 
-      {consulta.id === '' && consulta.nombre === '' ? (
-        <div style={styles.emptyPrompt}> Ingrese un ID o un nombre en el panel superior para realizar la consulta.</div>
+      {!datosCargados ? (
+        <div style={styles.emptyPrompt}> Ingrese un ID o un nombre en el panel superior y presione Consultar Servidor.</div>
       ) : (
         <TablaGeneral lista={resultados} />
       )}
@@ -749,8 +914,7 @@ function VistaConsultar({ accesorios }) {
 // -----------------------------------------------------------------------------
 // TABLA REUTILIZABLE CON DISEÑO DATA GRID MODERNO
 // -----------------------------------------------------------------------------
-
-function TablaGeneral({ lista = false }) {
+function TablaGeneral({ lista = false, onEliminar, soloEliminar }) {
   if (lista.length === 0) {
     return <div style={styles.emptyPrompt}>No se encontraron registros que coincidan con los criterios o la base de datos está vacía.</div>;
   }
@@ -766,6 +930,7 @@ function TablaGeneral({ lista = false }) {
             <th style={styles.th}>Precio</th>
             <th style={styles.th}>Marca</th>
             <th style={styles.th}>ID Inst.</th>
+            {soloEliminar && <th style={styles.th}>Acción</th>}
           </tr>
         </thead>
         <tbody>
@@ -779,6 +944,11 @@ function TablaGeneral({ lista = false }) {
               <td style={styles.tdPrice}>${item.precio.toFixed(2)}</td>
               <td style={styles.td}>{item.marca}</td>
               <td style={styles.td}>#{item.idInstrumento}</td>
+              {soloEliminar && (
+                <td style={styles.td}>
+                  <button style={styles.btnDanger} onClick={() => onEliminar(item.id)}>Eliminar</button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -790,7 +960,6 @@ function TablaGeneral({ lista = false }) {
 // -----------------------------------------------------------------------------
 // SISTEMA DE ESTILOS INLINE
 // -----------------------------------------------------------------------------
-
 const styles = {
   instrumentosWrapper: { backgroundColor: '#ffffff', minHeight: '420px', padding: '8px 0' },
   embeddedFrame: {
