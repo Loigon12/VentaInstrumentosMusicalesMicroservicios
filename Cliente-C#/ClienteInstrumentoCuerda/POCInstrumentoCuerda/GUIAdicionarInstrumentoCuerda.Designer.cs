@@ -186,7 +186,7 @@
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(146, 17);
             this.label3.TabIndex = 3;
-            this.label3.Text = "Nombre del accesorio";
+            this.label3.Text = "Nombre del instrumento";
             this.label3.Click += new System.EventHandler(this.label3_Click);
             // 
             // label2
@@ -236,7 +236,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(255, 24);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Adicionar InstrumentoCuerda";
+            this.label1.Text = "Adicionar instrumento";
             this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // GUIAdicionarInstrumentoCuerda
@@ -247,7 +247,7 @@
             this.Controls.Add(this.panel1);
             this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "GUIAdicionarInstrumentoCuerda";
-            this.Text = "GUIAdicionarInstrumentoCuerda";
+            this.Text = "Adicionar instrumento";
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);

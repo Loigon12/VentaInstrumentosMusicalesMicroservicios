@@ -164,6 +164,83 @@ namespace POCInstrumentoCuerda
             }
         }
 
+        // ---------------- Instrumentos de viento ----------------
+
+        private const string CamposViento = "id nombre precio fechaVenta numeroLlaves tipoBoquilla";
+
+        public static async Task<List<InstrumentoViento>> ListarVientoAsync(string nombre, double? precioMaximo)
+        {
+            using (var client = CreateClient())
+            {
+                var response = await client.SendQueryAsync<InstrumentoVientoQueryResponse>(new GraphQLRequest
+                {
+                    Query = "query ($nombre: String, $precioMaximo: Float) { instrumentoViento(nombre: $nombre, precioMaximo: $precioMaximo) { " + CamposViento + " } }",
+                    Variables = new { nombre, precioMaximo }
+                });
+                Validate(response.Errors);
+                return response.Data.instrumentoViento ?? new List<InstrumentoViento>();
+            }
+        }
+
+        public static async Task<InstrumentoViento> BuscarVientoAsync(int id)
+        {
+            using (var client = CreateClient())
+            {
+                var response = await client.SendQueryAsync<InstrumentoVientoQueryResponse>(new GraphQLRequest
+                {
+                    Query = "query ($codigo: Int!) { instrumentoVientoPorCodigo(codigo: $codigo) { " + CamposViento + " } }",
+                    Variables = new { codigo = id }
+                });
+                Validate(response.Errors);
+                return response.Data.instrumentoVientoPorCodigo;
+            }
+        }
+
+        public static async Task<InstrumentoViento> AdicionarVientoAsync(InstrumentoVientoInput input)
+        {
+            using (var client = CreateClient())
+            {
+                var response = await client.SendMutationAsync<InstrumentoVientoMutationResponse>(new GraphQLRequest
+                {
+                    Query = "mutation ($input: InstrumentoVientoInput!) { addInstrumentoViento(input: $input) { " + CamposViento + " } }",
+                    Variables = new { input }
+                });
+                Validate(response.Errors);
+                if (response.Data.addInstrumentoViento != null) ServicioObserver.NotificarCambio();
+                return response.Data.addInstrumentoViento;
+            }
+        }
+
+        public static async Task<InstrumentoViento> EliminarVientoAsync(int id)
+        {
+            using (var client = CreateClient())
+            {
+                var response = await client.SendMutationAsync<InstrumentoVientoMutationResponse>(new GraphQLRequest
+                {
+                    Query = "mutation ($id: Int!) { delInstrumentoViento(input: $id) { " + CamposViento + " } }",
+                    Variables = new { id }
+                });
+                Validate(response.Errors);
+                if (response.Data.delInstrumentoViento != null) ServicioObserver.NotificarCambio();
+                return response.Data.delInstrumentoViento;
+            }
+        }
+
+        public static async Task<InstrumentoViento> ActualizarVientoAsync(InstrumentoVientoInput input)
+        {
+            using (var client = CreateClient())
+            {
+                var response = await client.SendMutationAsync<InstrumentoVientoMutationResponse>(new GraphQLRequest
+                {
+                    Query = "mutation ($input: InstrumentoVientoInput!) { editInstrumentoViento(input: $input) { " + CamposViento + " } }",
+                    Variables = new { input }
+                });
+                Validate(response.Errors);
+                if (response.Data.editInstrumentoViento != null) ServicioObserver.NotificarCambio();
+                return response.Data.editInstrumentoViento;
+            }
+        }
+
         private static void Validate(GraphQLError[] errors)
         {
             if (errors != null && errors.Length > 0)

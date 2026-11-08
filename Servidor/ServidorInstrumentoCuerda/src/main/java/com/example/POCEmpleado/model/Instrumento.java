@@ -43,11 +43,13 @@ public class Instrumento {
     }
 
     public void setPrecio(double precio) throws Exception {
-        if (precio > 0) {
-            this.precio = precio;
-        } else {
-            throw new Exception("Precio menor o igual a 0");
+        if (precio < 0) {
+            throw new Exception("El precio no puede ser negativo.");
         }
+        if (precio == 0) {
+            throw new Exception("El precio debe ser mayor que cero.");
+        }
+        this.precio = precio;
     }
 
     public double getPrecio() {
@@ -67,11 +69,13 @@ public class Instrumento {
     }
 
     public void setId(int id) throws Exception {
-        if (id > 0) {
-            this.codigo = id;
-        } else {
-            throw new Exception("Id menor a 0");
+        if (id < 0) {
+            throw new Exception("El id no puede ser negativo.");
         }
+        if (id == 0) {
+            throw new Exception("El id debe ser mayor que cero.");
+        }
+        this.codigo = id;
     }
 
     public String getNombre() {
@@ -79,11 +83,10 @@ public class Instrumento {
     }
 
     public void setNombre(String nombre) throws Exception {
-        if (nombre.isEmpty()) {
-            throw new Exception("No se puede crear un instrumento sin un nombre");
-        } else {
-            this.nombre = nombre;
+        if (nombre == null || nombre.isBlank()) {
+            throw new Exception("No se puede crear un instrumento sin nombre.");
         }
+        this.nombre = nombre.trim();
     }
 
     public LocalDate getFechaVenta() {
@@ -99,11 +102,13 @@ public class Instrumento {
     }
 
     public void setNumeroCuerdas(int numeroCuerdas) throws Exception {
-        if (numeroCuerdas > 0) {
-            this.numeroCuerdas = numeroCuerdas;
-        } else {
-            throw new Exception("Numero de cuerdas menor o igual a 0");
+        if (numeroCuerdas < 0) {
+            throw new Exception("El número de cuerdas no puede ser negativo.");
         }
+        if (numeroCuerdas == 0) {
+            throw new Exception("El número de cuerdas debe ser mayor que cero.");
+        }
+        this.numeroCuerdas = numeroCuerdas;
     }
 
     public int getNumeroTrastes() {
@@ -111,10 +116,9 @@ public class Instrumento {
     }
 
     public void setNumeroTrastes(int numeroTrastes) throws Exception {
-        if (numeroTrastes >= 0) {
-            this.numeroTrastes = numeroTrastes;
-        } else {
-            throw new Exception("Número de trastes menor a 0");
+        if (numeroTrastes < 0) {
+            throw new Exception("El número de trastes no puede ser negativo.");
         }
+        this.numeroTrastes = numeroTrastes;
     }
 }

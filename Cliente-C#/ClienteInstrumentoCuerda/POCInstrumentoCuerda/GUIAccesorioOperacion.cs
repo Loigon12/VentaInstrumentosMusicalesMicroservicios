@@ -222,7 +222,7 @@ namespace POCInstrumentoCuerda
             try
             {
                 var accesorio = await GraphQLService.BuscarAccesorioAsync(LeerId());
-                if (accesorio == null) throw new Exception("No se encontró un accesorio con ese ID.");
+                if (accesorio == null) throw new InvalidOperationException("No se encontró un accesorio con ese ID.");
                 MostrarAccesorio(accesorio);
                 lblEstado.Text = "Consulta realizada correctamente.";
             }
@@ -235,7 +235,7 @@ namespace POCInstrumentoCuerda
             {
                 int id = LeerId();
                 var accesorio = await GraphQLService.BuscarAccesorioAsync(id);
-                if (accesorio == null) throw new Exception("No se encontró un accesorio con ese ID.");
+                if (accesorio == null) throw new InvalidOperationException("No se encontró un accesorio con ese ID.");
                 MostrarAccesorio(accesorio);
                 if (operacion == "Actualizar") { registroCargado = true; txtId.ReadOnly = true; }
                 lblEstado.Text = "Accesorio cargado correctamente.";
@@ -248,21 +248,18 @@ namespace POCInstrumentoCuerda
             try
             {
                 int id = LeerId();
-                if (actualizar && !registroCargado) throw new Exception("Primero busca y carga el accesorio que deseas actualizar.");
-                int idInstrumento;
-                double precio;
-                if (!int.TryParse(txtIdInstrumento.Text, out idInstrumento) || idInstrumento <= 0)
-                    throw new Exception("El ID del instrumento debe ser un entero positivo.");
-                if (!double.TryParse(txtPrecio.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out precio) &&
-                    !double.TryParse(txtPrecio.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out precio))
-                    throw new Exception("Escribe un precio válido.");
-                if (precio <= 0 || string.IsNullOrWhiteSpace(txtNombre.Text) || string.IsNullOrWhiteSpace(txtMarca.Text))
-                    throw new Exception("El nombre y la marca son obligatorios y el precio debe ser mayor que cero.");
+                if (actualizar && !registroCargado)
+                    throw new InvalidOperationException("Primero busque y cargue el accesorio que desea actualizar.");
 
+                string contexto = actualizar ? "actualizar un accesorio" : "crear un accesorio";
                 var input = new AccesorioInput
                 {
-                    id = id, nombre = txtNombre.Text.Trim(), tipo = cmbTipo.Text,
-                    precio = precio, marca = txtMarca.Text.Trim(), idInstrumento = idInstrumento
+                    id = id,
+                    nombre = Validaciones.TextoObligatorio(txtNombre.Text, "el nombre", contexto),
+                    tipo = cmbTipo.Text,
+                    precio = Validaciones.Precio(txtPrecio.Text, contexto),
+                    marca = Validaciones.TextoObligatorio(txtMarca.Text, "la marca", contexto),
+                    idInstrumento = Validaciones.Id(txtIdInstrumento.Text, "el ID del instrumento", contexto)
                 };
                 if (actualizar) await GraphQLService.ActualizarAccesorioAsync(input);
                 else await GraphQLService.AdicionarAccesorioAsync(input);
@@ -279,7 +276,7 @@ namespace POCInstrumentoCuerda
             {
                 int id = LeerId();
                 var accesorio = await GraphQLService.BuscarAccesorioAsync(id);
-                if (accesorio == null) throw new Exception("Primero consulta un accesorio válido para eliminarlo.");
+                if (accesorio == null) throw new InvalidOperationException("No se encontró un accesorio con ese ID para eliminar.");
                 if (MessageBox.Show("¿Deseas eliminar el accesorio " + accesorio.nombre + " (ID " + id + ")?", "Confirmar eliminación", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
                 await GraphQLService.EliminarAccesorioAsync(id);
                 lblEstado.Text = "Accesorio eliminado correctamente.";
@@ -291,9 +288,15 @@ namespace POCInstrumentoCuerda
 
         private int LeerId()
         {
-            int id;
-            if (!int.TryParse(txtId.Text, out id) || id <= 0) throw new Exception("Escribe un ID de accesorio entero y positivo.");
-            return id;
+            string contexto;
+            switch (operacion)
+            {
+                case "Adicionar": contexto = "crear un accesorio"; break;
+                case "Actualizar": contexto = "actualizar un accesorio"; break;
+                case "Eliminar": contexto = "eliminar un accesorio"; break;
+                default: contexto = "consultar un accesorio"; break;
+            }
+            return Validaciones.Id(txtId.Text, "el ID", contexto);
         }
 
         private void MostrarAccesorio(Accesorio a)
@@ -318,8 +321,9 @@ namespace POCInstrumentoCuerda
 
         private void MostrarError(Exception ex)
         {
-            lblEstado.Text = ex.Message;
-            MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            string mensaje = Validaciones.MensajeDeError(ex);
+            lblEstado.Text = mensaje;
+            MessageBox.Show(mensaje, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

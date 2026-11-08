@@ -31,19 +31,20 @@ public class AccesorioCuerda {
     private String objectIdInstrumento;
 
     public void setId(int id) throws Exception {
-        if (id > 0) {
-            this.codigo = id;
-        } else {
-            throw new Exception("Id menor a 0");
+        if (id < 0) {
+            throw new Exception("El id no puede ser negativo.");
         }
+        if (id == 0) {
+            throw new Exception("El id debe ser mayor que cero.");
+        }
+        this.codigo = id;
     }
 
     public void setNombre(String nombre) throws Exception {
-        if (nombre.isEmpty()) {
-            throw new Exception("No se puede crear un Accesorio sin un nombre");
-        } else {
-            this.nombre = nombre;
+        if (nombre == null || nombre.isBlank()) {
+            throw new Exception("No se puede crear un accesorio sin nombre.");
         }
+        this.nombre = nombre.trim();
     }
 
     public void setTipo(tipo tipo) {
@@ -51,15 +52,20 @@ public class AccesorioCuerda {
     }
 
     public void setPrecio(double precio) throws Exception {
-        if (precio > 0) {
-            this.precio = precio;
-        } else {
-            throw new Exception("Precio menor o igual a 0");
+        if (precio < 0) {
+            throw new Exception("El precio no puede ser negativo.");
         }
+        if (precio == 0) {
+            throw new Exception("El precio debe ser mayor que cero.");
+        }
+        this.precio = precio;
     }
 
-    public void setMarca(String marca) {
-        this.marca = marca;
+    public void setMarca(String marca) throws Exception {
+        if (marca == null || marca.isBlank()) {
+            throw new Exception("No se puede crear un accesorio sin marca.");
+        }
+        this.marca = marca.trim();
     }
 
     public int getId() {
@@ -95,11 +101,13 @@ public class AccesorioCuerda {
     }
 
     public void setIdINstrumento(int idInstrumento) throws Exception {
-        if (idInstrumento > 0) {
-            this.idInstrumento = idInstrumento;
-        } else {
-            throw new Exception("Id menor a 0");
+        if (idInstrumento < 0) {
+            throw new Exception("El ID del instrumento no puede ser negativo.");
         }
+        if (idInstrumento == 0) {
+            throw new Exception("El ID del instrumento debe ser mayor que cero.");
+        }
+        this.idInstrumento = idInstrumento;
     }
 
     public int getIdInstrumento() {
@@ -114,9 +122,12 @@ public class AccesorioCuerda {
         setId(id);
         setIdINstrumento(idInstrumento);
         setNombre(nombre);
+        if (tipo == null) {
+            throw new Exception("No se puede crear un accesorio sin tipo.");
+        }
         this.tipo = tipo;
         setPrecio(precio);
-        this.marca = marca;
+        setMarca(marca);
     }
 
     public String getMarca() {

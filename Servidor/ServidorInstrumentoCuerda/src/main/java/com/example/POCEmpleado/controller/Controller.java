@@ -4,8 +4,11 @@ import com.example.POCEmpleado.model.AccesorioCuerda;
 import com.example.POCEmpleado.model.AccesorioInput;
 import com.example.POCEmpleado.model.Instrumento;
 import com.example.POCEmpleado.model.InstrumentoInput;
+import com.example.POCEmpleado.model.InstrumentoViento;
+import com.example.POCEmpleado.model.InstrumentoVientoInput;
 import com.example.POCEmpleado.servicios.ServicioAccesorio;
 import com.example.POCEmpleado.servicios.ServicioInstrumento;
+import com.example.POCEmpleado.servicios.ServicioInstrumentoViento;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -19,10 +22,13 @@ public class Controller {
 
     private final ServicioInstrumento servicioInstrumento;
     private final ServicioAccesorio servicioAccesorio;
+    private final ServicioInstrumentoViento servicioViento;
 
-    public Controller(ServicioInstrumento servicioInstrumento, ServicioAccesorio servicioAccesorio) {
+    public Controller(ServicioInstrumento servicioInstrumento, ServicioAccesorio servicioAccesorio,
+                      ServicioInstrumentoViento servicioViento) {
         this.servicioInstrumento = servicioInstrumento;
         this.servicioAccesorio = servicioAccesorio;
+        this.servicioViento = servicioViento;
     }
 
     @QueryMapping
@@ -79,5 +85,32 @@ public class Controller {
     @MutationMapping
     public Optional<AccesorioCuerda> editAccesorio(@Argument("input") AccesorioInput input) throws Exception {
         return servicioAccesorio.editAccesorio(input);
+    }
+
+    // ---------------- Instrumentos de viento ----------------
+
+    @QueryMapping
+    public List<InstrumentoViento> instrumentoViento(@Argument String nombre, @Argument Double precioMaximo) {
+        return servicioViento.listarInstrumentos(nombre, precioMaximo);
+    }
+
+    @QueryMapping
+    public Optional<InstrumentoViento> instrumentoVientoPorCodigo(@Argument int codigo) {
+        return servicioViento.buscarPorCodigo(codigo);
+    }
+
+    @MutationMapping
+    public Optional<InstrumentoViento> addInstrumentoViento(@Argument("input") InstrumentoVientoInput input) throws Exception {
+        return servicioViento.addInstrumento(input);
+    }
+
+    @MutationMapping
+    public Optional<InstrumentoViento> delInstrumentoViento(@Argument("input") int codigo) throws Exception {
+        return servicioViento.delInstrumento(codigo);
+    }
+
+    @MutationMapping
+    public Optional<InstrumentoViento> editInstrumentoViento(@Argument("input") InstrumentoVientoInput input) throws Exception {
+        return servicioViento.editInstrumento(input);
     }
 }
