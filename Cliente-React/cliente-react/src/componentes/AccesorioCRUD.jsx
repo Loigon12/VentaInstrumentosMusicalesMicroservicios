@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import InstrumentosCRUD from './InstrumentosCRUD';
-import ConsultarInstrumentoCRUD from './ConsultarInstrumentoCRUD';
 
 // Enum de tipos de accesorio para coincidir EXACTAMENTE con el schema.graphqls
 export const TipoAccesorio = Object.freeze({
@@ -14,56 +13,42 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
   const [menuDesplegado, setMenuDesplegado] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
   const [operacionInstrumentos, setOperacionInstrumentos] = useState('listar');
-  const [aviso, setAviso] = useState(null);
 
-  // 1. CONSULTAR ACCESORIOS (Query GraphQL reutilizable)
-  const obtenerAccesorios = React.useCallback(async () => {
-    const response = await fetch('http://localhost:8081/graphql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `
-          query {
-            accesorio {
-              id
-              nombre
-              tipo
-              precio
-              marca
-              idInstrumento
-            }
-          }
-        `
-      })
-    });
-    const result = await response.json();
-    if (!response.ok || result.errors?.length) {
-      throw new Error(result.errors?.map(e => e.message).join('\n') || 'Error HTTP al consultar accesorios.');
-    }
-    return result.data?.accesorio ?? [];
-  }, []);
-
-  useEffect(() => {
-    let activo = true;
-    obtenerAccesorios()
-      .then(lista => { if (activo) setAccesorios(lista); })
-      .catch(error => {
-        console.error("Error al conectar con el servidor GraphQL:", error);
-        if (activo) setAviso({ tipo: 'error', texto: `No se pudieron cargar los accesorios: ${error.message}` });
-      });
-    return () => { activo = false; };
-  }, [obtenerAccesorios]);
-
-  // Recarga manual desde el servidor (botón del panel de listado).
-  const recargarAccesorios = async () => {
+  const cargarAccesorios = async () => {
     try {
-      setAccesorios(await obtenerAccesorios());
-      setAviso({ tipo: 'exito', texto: 'Lista de accesorios actualizada desde el servidor.' });
+      const response = await fetch('http://localhost:8081/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query {
+              accesorio {
+                id
+                nombre
+                tipo
+                precio
+                marca
+                idInstrumento
+              }
+            }
+          `
+        })
+      });
+      const result = await response.json();
+      if (!response.ok || result.errors?.length) {
+        throw new Error(result.errors?.map(e => e.message).join('\n') || 'Error HTTP al consultar accesorios.');
+      }
+      if (result.data && result.data.accesorio) {
+        setAccesorios(result.data.accesorio);
+      }
     } catch (error) {
       console.error("Error al conectar con el servidor GraphQL:", error);
-      setAviso({ tipo: 'error', texto: `No se pudieron cargar los accesorios: ${error.message}` });
     }
   };
+
+  useEffect(() => {
+    cargarAccesorios();
+  }, []);
 
   const cerrarMenus = () => setMenuDesplegado(null);
 
@@ -75,11 +60,10 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
   const cambiarVista = (vista) => {
     setVistaActual(vista);
     setMenuDesplegado(null);
+    setEditandoId(null);
   };
 
-  const esVistaAccesorio = ['adicionar', 'listar', 'consultar', 'actualizar', 'eliminar'].includes(vistaActual);
-
-  // 2. ADICIONAR ACCESORIO (Mutation)
+  // ADICIONAR ACCESORIO (Mutation)
   const handleAdicionar = async (nuevo) => {
     try {   
       const response = await fetch('http://localhost:8081/graphql', {
@@ -100,12 +84,12 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
           `,
           variables: {
             input: {
-              id: nuevo.id.toString(), // Convertido a String porque schema pide ID!
+              id: nuevo.id.toString(), 
               nombre: nuevo.nombre,
-              tipo: nuevo.tipo, // Solo CUERDAPULSADA o CUERDAFROTADA
-              precio: parseFloat(nuevo.precio), // Float!
+              tipo: nuevo.tipo, 
+              precio: parseFloat(nuevo.precio), 
               marca: nuevo.marca,
-              idInstrumento: nuevo.idInstrumento.toString() // Convertido a String porque schema pide ID!
+              idInstrumento: nuevo.idInstrumento.toString() 
             }
           }
         })
@@ -114,24 +98,20 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       const result = await response.json();
       if (!response.ok || result.errors?.length) {
         console.error("Error de GraphQL:", result.errors);
-        const errMsg = result.errors ? result.errors.map(e => e.message).join("\n") : "Error HTTP en el servidor"; alert("Error al guardar: " + errMsg);
-        setAviso({ tipo: 'error', texto: `No se pudo adicionar el accesorio: ${errMsg}` });
+        alert("Error al guardar: Revisa la consola para más detalles.");
         return;
       }
 
-      // Usar el registro devuelto por el servidor evita diferencias de tipo en los ID.
       const creado = result.data?.addAccesorio;
       if (!creado) throw new Error('El servidor no devolvió el accesorio creado.');
       setAccesorios(prev => [...prev.filter(a => String(a.id) !== String(creado.id)), creado]);
-      setAviso({ tipo: 'exito', texto: 'Accesorio adicionado correctamente.' });
       cambiarVista('listar');
     } catch (error) {
       console.error("Error al guardar en el servidor:", error);
-      setAviso({ tipo: 'error', texto: `No se pudo adicionar el accesorio: ${error.message}` });
     }
   };
 
-  // 3. ELIMINAR ACCESORIO (Mutation)
+  // ELIMINAR ACCESORIO (Mutation)
   const handleEliminar = async (id) => {
     if (window.confirm(`¿Está seguro de eliminar el accesorio con ID #${id}?`)) {
       try {
@@ -147,7 +127,7 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
               }
             `,
             variables: {
-              input: parseInt(id) // El esquema pide Int!
+              input: parseInt(id) 
             }
           })
         });
@@ -155,21 +135,26 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         const result = await response.json();
         if (!response.ok || result.errors?.length) {
           console.error("Error de GraphQL:", result.errors);
-          const errMsg = result.errors ? result.errors.map(e => e.message).join("\n") : "Error HTTP al eliminar"; alert("Error al eliminar: " + errMsg);
-          setAviso({ tipo: 'error', texto: `No se pudo eliminar el accesorio: ${errMsg}` });
+          alert("Error al eliminar de la base de datos.");
           return;
         }
         
         setAccesorios(accesorios.filter(a => String(a.id) !== String(id)));
-        setAviso({ tipo: 'exito', texto: `Accesorio #${id} eliminado correctamente.` });
+        return true; // Retorna true si fue exitoso
       } catch (error) {
         console.error("Error al eliminar en el servidor:", error);
-        setAviso({ tipo: 'error', texto: `No se pudo eliminar el accesorio: ${error.message}` });
+        return false;
       }
     }
+    return false;
   };
 
-  // 4. ACTUALIZAR ACCESORIO (Mutation)
+  const handleIniciarEdicion = (item) => {
+    setEditandoId(item.id);
+    cambiarVista('actualizar');
+  };
+
+  // ACTUALIZAR ACCESORIO (Mutation)
   const handleGuardarActualizacion = async (accesorioActualizado) => {
     try {
       const response = await fetch('http://localhost:8081/graphql', {
@@ -190,12 +175,12 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
           `,
           variables: {
             input: {
-              id: accesorioActualizado.id.toString(), // Convertido a String porque schema pide ID!
+              id: accesorioActualizado.id.toString(), 
               nombre: accesorioActualizado.nombre,
               tipo: accesorioActualizado.tipo,
               precio: parseFloat(accesorioActualizado.precio),
               marca: accesorioActualizado.marca,
-              idInstrumento: accesorioActualizado.idInstrumento.toString() // Convertido a String porque schema pide ID!
+              idInstrumento: accesorioActualizado.idInstrumento.toString() 
             }
           }
         })
@@ -204,29 +189,27 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       const result = await response.json();
       if (!response.ok || result.errors?.length) {
         console.error("Error de GraphQL:", result.errors);
-        const errMsg = result.errors ? result.errors.map(e => e.message).join("\n") : "Error HTTP al actualizar"; alert("Error al actualizar: " + errMsg);
-        setAviso({ tipo: 'error', texto: `No se pudo actualizar el accesorio: ${errMsg}` });
+        alert("Error al actualizar en la base de datos.");
         return;
       }
       
       const actualizado = result.data?.editAccesorio;
       if (!actualizado) throw new Error('El servidor no devolvió el accesorio actualizado.');
+      
       setAccesorios(prev => prev.map(a => String(a.id) === String(actualizado.id)
         ? { ...a, ...accesorioActualizado, ...actualizado }
         : a));
-      setAviso({ tipo: 'exito', texto: `Accesorio #${actualizado.id} actualizado correctamente.` });
+      
       setEditandoId(null);
       cambiarVista('listar');
     } catch (error) {
       console.error("Error al actualizar en el servidor:", error);
-      setAviso({ tipo: 'error', texto: `No se pudo actualizar el accesorio: ${error.message}` });
     }
   };
 
   return (
     <div style={embebido ? styles.embeddedFrame : styles.windowFrame} onClick={cerrarMenus}>
       {!embebido && <>
-      {/* Barra de título de la ventana independiente */}
       <div style={styles.windowTitleBar}>
         <div style={styles.titleLeft}>
           <span style={styles.titleText}>Venta de Instrumentos Musicales</span>
@@ -238,10 +221,8 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         </div>
       </div>
 
-      {/* Navegación principal con el mismo estilo visual del cliente original */}
       <nav style={styles.navbar} onClick={(e) => e.stopPropagation()}>
         <button type="button" style={styles.navMenuBtn(false)} onClick={() => cambiarVista('inicio')}>Inicio</button>
-
         <button
           type="button"
           style={styles.navMenuBtn(false)}
@@ -291,17 +272,7 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       </nav>
       </>}
 
-      {/* Área de contenido de la operación seleccionada en el menú principal */}
       <main style={embebido ? styles.embeddedContentArea : styles.contentArea}>
-        {esVistaAccesorio && aviso && (
-          <div
-            role={aviso.tipo === 'error' ? 'alert' : 'status'}
-            style={aviso.tipo === 'error' ? styles.errorBox : styles.successBox}
-          >
-            {aviso.texto}
-          </div>
-        )}
-
         {vistaActual === 'inicio' && <VistaInicio />}
 
         {vistaActual === 'adicionar' && (
@@ -320,11 +291,7 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         )}
 
         {vistaActual === 'listar' && (
-          <VistaListar
-            accesorios={accesorios}
-            onRecargar={recargarAccesorios}
-            onEliminar={handleEliminar}
-          />
+          <VistaListar />
         )}
 
         {vistaActual === 'actualizar' && (
@@ -339,18 +306,14 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
 
         {vistaActual === 'consultar' && (
           <VistaConsultar
-            accesorios={accesorios}
+            onEditar={handleIniciarEdicion}
             onEliminar={handleEliminar}
           />
         )}
 
         {vistaActual === 'instrumentos' && (
           <div style={styles.instrumentosWrapper}>
-            {operacionInstrumentos === 'consultar' ? (
-              <ConsultarInstrumentoCRUD />
-            ) : (
-              <InstrumentosCRUD operacion={operacionInstrumentos} />
-            )}
+            <InstrumentosCRUD operacion={operacionInstrumentos} />
           </div>
         )}
 
@@ -397,7 +360,7 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
   const [form, setForm] = useState({
     id: '',
     nombre: '',
-    tipo: TipoAccesorio.CUERDAPULSADA, // Valor por defecto actualizado
+    tipo: TipoAccesorio.CUERDAPULSADA, 
     precio: '',
     marca: '',
     idInstrumento: ''
@@ -407,7 +370,6 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
     e.preventDefault();
     const idNum = form.id ? parseInt(form.id) : Date.now();
     
-    // Convertimos a Number para la validación local
     if (accesorios.some(a => parseInt(a.id) === idNum)) {
       alert('El ID ingresado ya existe. Por favor ingrese uno diferente.');
       return;
@@ -509,18 +471,26 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
 }
 
 function VistaEliminar({ accesorios, onEliminar }) {
-  const [idBuscar, setIdBuscar] = useState('');
-  const [idConfirmado, setIdConfirmado] = useState('');
-  const accesorioEncontrado = accesorios.find(a => a.id.toString() === idConfirmado.trim());
+  const [idInput, setIdInput] = useState('');
+  const [accesorioEncontrado, setAccesorioEncontrado] = useState(null);
+  const [busquedaRealizada, setBusquedaRealizada] = useState(false);
 
   const buscarParaEliminar = () => {
-    setIdConfirmado(idBuscar.trim());
+    if (!idInput.trim()) {
+      alert("Por favor ingrese un ID para buscar.");
+      return;
+    }
+    const acc = accesorios.find(a => a.id.toString() === idInput.trim());
+    setAccesorioEncontrado(acc || null);
+    setBusquedaRealizada(true);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      buscarParaEliminar();
+  const confirmarEliminacion = async () => {
+    const exito = await onEliminar(accesorioEncontrado.id);
+    if (exito) {
+      setIdInput('');
+      setAccesorioEncontrado(null);
+      setBusquedaRealizada(false);
     }
   };
 
@@ -532,21 +502,19 @@ function VistaEliminar({ accesorios, onEliminar }) {
 
       <div style={styles.filterCard}>
         <label style={styles.label}>Buscar por ID para eliminar:</label>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '6px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
           <input
             type="number"
             placeholder="Ingrese ID..."
-            value={idBuscar}
-            onChange={e => setIdBuscar(e.target.value)}
-            onKeyDown={handleKeyDown}
+            value={idInput}
+            onChange={e => { setIdInput(e.target.value); setBusquedaRealizada(false); }}
             style={{ ...styles.input, maxWidth: '240px' }}
           />
-          <button type="button" onClick={buscarParaEliminar} style={styles.btnPrimary}>Buscar ID</button>
-          <button type="button" onClick={() => { setIdBuscar(''); setIdConfirmado(''); }} style={styles.btnSecondary}>Limpiar</button>
+          <button onClick={buscarParaEliminar} style={styles.btnPrimary}>Buscar</button>
         </div>
       </div>
 
-      {idConfirmado !== '' && (
+      {busquedaRealizada && (
         <div style={{ marginTop: '16px' }}>
           {accesorioEncontrado ? (
             <div style={styles.deleteConfirmBox}>
@@ -555,60 +523,103 @@ function VistaEliminar({ accesorios, onEliminar }) {
               <p style={styles.detailText}><strong>Nombre:</strong> {accesorioEncontrado.nombre}</p>
               <p style={styles.detailText}><strong>Marca:</strong> {accesorioEncontrado.marca}</p>
               <p style={styles.detailText}><strong>Precio:</strong> ${accesorioEncontrado.precio.toFixed(2)}</p>
-              <button
-                onClick={() => { onEliminar(accesorioEncontrado.id); setIdBuscar(''); setIdConfirmado(''); }}
-                style={styles.btnDanger}
-              >
-                 Confirmar Eliminación Permanente
-              </button>
+              <div style={{ marginTop: '16px' }}>
+                <button
+                  onClick={confirmarEliminacion}
+                  style={styles.btnDanger}
+                >
+                  Confirmar Eliminación Permanente
+                </button>
+              </div>
             </div>
           ) : (
-            <div style={styles.notFoundBox}>No se encontró ningún registro con el ID "{idConfirmado}".</div>
+            <div style={styles.notFoundBox}>No se encontró ningún registro con el ID "{idInput}".</div>
           )}
         </div>
       )}
 
       <h3 style={{ marginTop: '28px', fontSize: '13px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tabla de eliminación directa:</h3>
-      <TablaGeneral lista={accesorios} onEliminar={onEliminar} />
+      <TablaGeneral lista={accesorios} soloEliminar onEliminar={onEliminar} />
     </div>
   );
 }
 
-function VistaListar({ accesorios, onRecargar, onEliminar }) {
-  const [inputs, setInputs] = useState({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
-  const [filtrosAplicados, setFiltrosAplicados] = useState({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
+// -----------------------------------------------------------------------------
+// VISTA LISTAR ACTUALIZADA (Petición GraphQL)
+// -----------------------------------------------------------------------------
+function VistaListar() {
+  const [datosCargados, setDatosCargados] = useState(false);
+  const [itemsMostrar, setItemsMostrar] = useState([]);
+  
+  const [filtros, setFiltros] = useState({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
 
-  const aplicarFiltros = () => {
-    setFiltrosAplicados({ ...inputs });
-  };
+  useEffect(() => {
+    setDatosCargados(false);
+    setItemsMostrar([]);
+  }, []);
 
-  const limpiarFiltros = () => {
-    const vacio = { nombre: '', tipo: '', marca: '', idInstrumento: '' };
-    setInputs(vacio);
-    setFiltrosAplicados(vacio);
-    if (onRecargar) onRecargar();
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      aplicarFiltros();
+  const fetchGraphQL = async () => {
+    try {
+      const response = await fetch('http://localhost:8081/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query {
+              accesorio {
+                id
+                nombre
+                tipo
+                precio
+                marca
+                idInstrumento
+              }
+            }
+          `
+        })
+      });
+      const result = await response.json();
+      if (!response.ok || result.errors) throw new Error("Error en GraphQL");
+      return result.data.accesorio || [];
+    } catch (error) {
+      console.error("Error al obtener datos:", error);
+      alert("Hubo un problema al conectar con el servidor GraphQL.");
+      return [];
     }
   };
 
-  const filtrados = accesorios.filter(a => {
-    const matchNombre = a.nombre.toLowerCase().includes(filtrosAplicados.nombre.toLowerCase());
-    const matchTipo = filtrosAplicados.tipo === '' || a.tipo === filtrosAplicados.tipo;
-    const matchMarca = a.marca.toLowerCase().includes(filtrosAplicados.marca.toLowerCase());
-    const matchInst = filtrosAplicados.idInstrumento === '' || a.idInstrumento.toString() === filtrosAplicados.idInstrumento;
-    return matchNombre && matchTipo && matchMarca && matchInst;
-  });
+  const buscar = async () => {
+    if (!filtros.nombre && !filtros.tipo && !filtros.marca && !filtros.idInstrumento) {
+      alert("Por favor ingrese al menos un parámetro de búsqueda.");
+      return;
+    }
+    
+    // Petición real al backend
+    const todosLosAccesorios = await fetchGraphQL();
+    
+    // Filtrado en cliente de los datos devueltos por GraphQL
+    const filtrados = todosLosAccesorios.filter(a => {
+      const matchNombre = filtros.nombre === '' || a.nombre.toLowerCase().includes(filtros.nombre.toLowerCase());
+      const matchTipo = filtros.tipo === '' || a.tipo === filtros.tipo;
+      const matchMarca = filtros.marca === '' || a.marca.toLowerCase().includes(filtros.marca.toLowerCase());
+      const matchInst = filtros.idInstrumento === '' || a.idInstrumento.toString() === filtros.idInstrumento;
+      return matchNombre && matchTipo && matchMarca && matchInst;
+    });
+    setItemsMostrar(filtrados);
+    setDatosCargados(true);
+  };
+  const mostrarTodos = async () => {
+    setFiltros({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
+    const todosLosAccesorios = await fetchGraphQL();
+    setItemsMostrar(todosLosAccesorios);
+    setDatosCargados(true);
+  };
 
   return (
     <div>
       <div style={styles.headerBlock}>
-        <h2 style={styles.viewTitle}>Listar por Parámetros</h2>
-        <span style={{ fontSize: '12px', color: '#64748b' }}>{filtrados.length} elementos encontrados</span>
+        <h2 style={styles.viewTitle}>Listar Accesorios</h2>
+        {datosCargados && <span style={{ fontSize: '12px', color: '#64748b' }}>{itemsMostrar.length} elementos encontrados por GraphQL</span>}
       </div>
 
       <div style={styles.filterCard}>
@@ -616,14 +627,13 @@ function VistaListar({ accesorios, onRecargar, onEliminar }) {
           <input
             type="text"
             placeholder="Filtrar por Nombre..."
-            value={inputs.nombre}
-            onChange={e => setInputs({ ...inputs, nombre: e.target.value })}
-            onKeyDown={handleKeyDown}
+            value={filtros.nombre}
+            onChange={e => setFiltros({ ...filtros, nombre: e.target.value })}
             style={styles.input}
           />
           <select
-            value={inputs.tipo}
-            onChange={e => setInputs({ ...inputs, tipo: e.target.value })}
+            value={filtros.tipo}
+            onChange={e => setFiltros({ ...filtros, tipo: e.target.value })}
             style={styles.select}
           >
             <option value="">-- Todos los Tipos --</option>
@@ -632,37 +642,42 @@ function VistaListar({ accesorios, onRecargar, onEliminar }) {
           <input
             type="text"
             placeholder="Filtrar Marca..."
-            value={inputs.marca}
-            onChange={e => setInputs({ ...inputs, marca: e.target.value })}
-            onKeyDown={handleKeyDown}
+            value={filtros.marca}
+            onChange={e => setFiltros({ ...filtros, marca: e.target.value })}
             style={styles.input}
           />
           <input
             type="number"
             placeholder="ID Instrumento..."
-            value={inputs.idInstrumento}
-            onChange={e => setInputs({ ...inputs, idInstrumento: e.target.value })}
-            onKeyDown={handleKeyDown}
+            value={filtros.idInstrumento}
+            onChange={e => setFiltros({ ...filtros, idInstrumento: e.target.value })}
             style={styles.input}
           />
         </div>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
-          <button type="button" onClick={aplicarFiltros} style={styles.btnPrimary}>Buscar / Filtrar</button>
-          <button type="button" onClick={limpiarFiltros} style={styles.btnSecondary}>Mostrar todos / Limpiar</button>
-          {onRecargar && <button type="button" onClick={onRecargar} style={styles.btnSecondary}>Actualizar desde servidor</button>}
+        
+        <div style={{ ...styles.buttonRow, marginTop: '16px' }}>
+          <button style={styles.btnPrimary} onClick={buscar}>Buscar</button>
+          <button style={styles.btnSecondary} onClick={mostrarTodos}>Mostrar todos</button>
         </div>
       </div>
 
-      <TablaGeneral lista={filtrados} onEliminar={onEliminar}/>
+      {datosCargados ? (
+        <TablaGeneral lista={itemsMostrar}/>
+      ) : (
+        <p style={{ color: '#64748b', fontStyle: 'italic', padding: '20px 0' }}>Haz clic en un botón de búsqueda para visualizar los registros desde GraphQL.</p>
+      )}
     </div>
   );
 }
 
+// -----------------------------------------------------------------------------
+// VISTA ACTUALIZAR (Requiere búsqueda previa)
+// -----------------------------------------------------------------------------
 function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, onCancelar }) {
-  const [tempId, setTempId] = useState(editandoId ?? '');
-  const accesorioSeleccionado = accesorios.find(a => String(a.id) === String(editandoId));
+  const [idBuscado, setIdBuscado] = useState(editandoId || '');
+  const accesorioSeleccionado = accesorios.find(a => a.id === editandoId);
 
-  const [form, setForm] = useState(accesorioSeleccionado || {
+  const [form, setForm] = useState({
     id: '',
     nombre: '',
     tipo: TipoAccesorio.CUERDAPULSADA,
@@ -674,18 +689,23 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
   React.useEffect(() => {
     if (accesorioSeleccionado) {
       setForm(accesorioSeleccionado);
-      setTempId(accesorioSeleccionado.id);
+      setIdBuscado(accesorioSeleccionado.id);
     }
   }, [editandoId, accesorioSeleccionado]);
 
   const buscarParaEditar = () => {
-    onSeleccionarId(tempId ? parseInt(tempId) : null);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      buscarParaEditar();
+    if (!idBuscado) {
+      alert("Ingrese un ID para buscar");
+      return;
+    }
+    const idParseado = parseInt(idBuscado);
+    const encontrado = accesorios.find(a => a.id === idParseado || a.id.toString() === idBuscado.toString());
+    
+    if (encontrado) {
+      onSeleccionarId(encontrado.id);
+    } else {
+      alert(`No se encontró ningún accesorio con el ID: ${idBuscado}`);
+      onSeleccionarId(null);
     }
   };
 
@@ -707,17 +727,15 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
 
       <div style={styles.filterCard}>
         <label style={styles.label}>Ingrese el ID a editar:</label>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '6px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
           <input
             type="number"
             placeholder="Ej: 1"
-            value={tempId}
-            onChange={e => setTempId(e.target.value)}
-            onKeyDown={handleKeyDown}
+            value={idBuscado}
+            onChange={e => setIdBuscado(e.target.value)}
             style={{ ...styles.input, maxWidth: '240px' }}
           />
-          <button type="button" onClick={buscarParaEditar} style={styles.btnPrimary}>Buscar ID</button>
-          <button type="button" onClick={() => { setTempId(''); onSeleccionarId(null); }} style={styles.btnSecondary}>Limpiar</button>
+          <button onClick={buscarParaEditar} style={styles.btnPrimary}>Buscar</button>
         </div>
       </div>
 
@@ -786,37 +804,69 @@ function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, o
           </div>
         </form>
       ) : (
-        <div style={styles.emptyPrompt}>Ingrese un ID válido en el campo superior y presione 'Buscar ID' (o Enter) para cargar el formulario de edición.</div>
+        <div style={styles.emptyPrompt}>Ingrese un ID válido en el campo superior y presione Buscar para cargar el formulario de edición.</div>
       )}
     </div>
   );
 }
 
-function VistaConsultar({ accesorios, onEliminar }) {
-  const [inputs, setInputs] = useState({ id: '', nombre: '' });
-  const [consultaActiva, setConsultaActiva] = useState({ id: '', nombre: '' });
+// -----------------------------------------------------------------------------
+// VISTA CONSULTAR (Petición GraphQL)
+// -----------------------------------------------------------------------------
+function VistaConsultar() {
+  const [consulta, setConsulta] = useState({ id: '', nombre: '' });
+  const [datosCargados, setDatosCargados] = useState(false);
+  const [resultados, setResultados] = useState([]);
 
-  const ejecutarConsulta = () => {
-    setConsultaActiva({ ...inputs });
-  };
+  useEffect(() => {
+    setDatosCargados(false);
+    setResultados([]);
+  }, []);
 
-  const limpiarConsulta = () => {
-    setInputs({ id: '', nombre: '' });
-    setConsultaActiva({ id: '', nombre: '' });
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      ejecutarConsulta();
+  const ejecutarConsulta = async () => {
+    if (consulta.id === '' && consulta.nombre === '') {
+      alert("Ingrese un ID o un nombre para buscar.");
+      return;
+    }
+    
+    try {
+      // Realizar la consulta a GraphQL en lugar de filtrar datos locales
+      const response = await fetch('http://localhost:8081/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query {
+              accesorio {
+                id
+                nombre
+                tipo
+                precio
+                marca
+                idInstrumento
+              }
+            }
+          `
+        })
+      });
+      const result = await response.json();
+      if (!response.ok || result.errors) throw new Error("Error en GraphQL");
+      
+      const todos = result.data.accesorio || [];
+      
+      const filtrados = todos.filter(a => {
+        const matchId = consulta.id === '' || a.id.toString() === consulta.id;
+        const matchNombre = consulta.nombre === '' || a.nombre.toLowerCase().includes(consulta.nombre.toLowerCase());
+        return matchId && matchNombre;
+      });
+      
+      setResultados(filtrados);
+      setDatosCargados(true);
+    } catch (error) {
+      console.error("Error al consultar:", error);
+      alert("No se pudo realizar la consulta al servidor.");
     }
   };
-
-  const resultados = accesorios.filter(a => {
-    const matchId = consultaActiva.id === '' || a.id.toString() === consultaActiva.id.trim();
-    const matchNombre = consultaActiva.nombre === '' || a.nombre.toLowerCase().includes(consultaActiva.nombre.trim().toLowerCase());
-    return (consultaActiva.id !== '' || consultaActiva.nombre !== '') && matchId && matchNombre;
-  });
 
   return (
     <div>
@@ -831,9 +881,8 @@ function VistaConsultar({ accesorios, onEliminar }) {
             <input
               type="number"
               placeholder="Ej: 1"
-              value={inputs.id}
-              onChange={e => setInputs({ ...inputs, id: e.target.value })}
-              onKeyDown={handleKeyDown}
+              value={consulta.id}
+              onChange={e => setConsulta({ ...consulta, id: e.target.value })}
               style={styles.input}
             />
           </div>
@@ -842,23 +891,21 @@ function VistaConsultar({ accesorios, onEliminar }) {
             <input
               type="text"
               placeholder="Ej: Cuerdas..."
-              value={inputs.nombre}
-              onChange={e => setInputs({ ...inputs, nombre: e.target.value })}
-              onKeyDown={handleKeyDown}
+              value={consulta.nombre}
+              onChange={e => setConsulta({ ...consulta, nombre: e.target.value })}
               style={styles.input}
             />
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
-          <button type="button" onClick={ejecutarConsulta} style={styles.btnPrimary}>Consultar</button>
-          <button type="button" onClick={limpiarConsulta} style={styles.btnSecondary}>Limpiar</button>
+        <div style={{ marginTop: '16px' }}>
+           <button style={styles.btnPrimary} onClick={ejecutarConsulta}>Consultar Servidor</button>
         </div>
       </div>
 
-      {consultaActiva.id === '' && consultaActiva.nombre === '' ? (
-        <div style={styles.emptyPrompt}> Ingrese un ID o un nombre y presione Consultar (o Enter) para realizar la búsqueda.</div>
+      {!datosCargados ? (
+        <div style={styles.emptyPrompt}> Ingrese un ID o un nombre en el panel superior y presione Consultar Servidor.</div>
       ) : (
-        <TablaGeneral lista={resultados} onEliminar={onEliminar} />
+        <TablaGeneral lista={resultados} />
       )}
     </div>
   );
@@ -867,8 +914,7 @@ function VistaConsultar({ accesorios, onEliminar }) {
 // -----------------------------------------------------------------------------
 // TABLA REUTILIZABLE CON DISEÑO DATA GRID MODERNO
 // -----------------------------------------------------------------------------
-
-function TablaGeneral({ lista = [], onEliminar }) {
+function TablaGeneral({ lista = false, onEliminar, soloEliminar }) {
   if (lista.length === 0) {
     return <div style={styles.emptyPrompt}>No se encontraron registros que coincidan con los criterios o la base de datos está vacía.</div>;
   }
@@ -884,7 +930,7 @@ function TablaGeneral({ lista = [], onEliminar }) {
             <th style={styles.th}>Precio</th>
             <th style={styles.th}>Marca</th>
             <th style={styles.th}>ID Inst.</th>
-            {onEliminar && <th style={styles.th}>Acciones</th>}
+            {soloEliminar && <th style={styles.th}>Acción</th>}
           </tr>
         </thead>
         <tbody>
@@ -898,13 +944,9 @@ function TablaGeneral({ lista = [], onEliminar }) {
               <td style={styles.tdPrice}>${item.precio.toFixed(2)}</td>
               <td style={styles.td}>{item.marca}</td>
               <td style={styles.td}>#{item.idInstrumento}</td>
-              {onEliminar && (
+              {soloEliminar && (
                 <td style={styles.td}>
-                  <div style={styles.actionGroup}>
-                    <button type="button" style={styles.btnDangerSmall} onClick={() => onEliminar(item.id)}>
-                      Eliminar
-                    </button>
-                  </div>
+                  <button style={styles.btnDanger} onClick={() => onEliminar(item.id)}>Eliminar</button>
                 </td>
               )}
             </tr>
@@ -918,12 +960,11 @@ function TablaGeneral({ lista = [], onEliminar }) {
 // -----------------------------------------------------------------------------
 // SISTEMA DE ESTILOS INLINE
 // -----------------------------------------------------------------------------
-
 const styles = {
   instrumentosWrapper: { backgroundColor: '#ffffff', minHeight: '420px', padding: '8px 0' },
   embeddedFrame: {
     width: '100%', minHeight: '420px', backgroundColor: '#fff', color: '#0f172a',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+    fontFamily: '-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif'
   },
   embeddedContentArea: { padding: '20px', minHeight: '420px', boxSizing: 'border-box', color: '#0f172a' },
   windowFrame: {
@@ -1199,39 +1240,6 @@ const styles = {
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer'
-  },
-  btnDangerSmall: {
-    backgroundColor: '#b91c1c',
-    color: '#ffffff',
-    border: 'none',
-    padding: '6px 12px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    fontWeight: '600',
-    cursor: 'pointer'
-  },
-  actionGroup: {
-    display: 'flex',
-    gap: '8px',
-    flexWrap: 'wrap'
-  },
-  successBox: {
-    backgroundColor: '#e8f7ec',
-    color: '#166534',
-    border: '1px solid #86efac',
-    borderRadius: '8px',
-    padding: '12px 16px',
-    fontSize: '14px',
-    marginBottom: '16px'
-  },
-  errorBox: {
-    backgroundColor: '#ffe8e8',
-    color: '#8b0000',
-    border: '1px solid #fca5a5',
-    borderRadius: '8px',
-    padding: '12px 16px',
-    fontSize: '14px',
-    marginBottom: '16px'
   },
   deleteConfirmBox: {
     backgroundColor: '#fef2f2',
