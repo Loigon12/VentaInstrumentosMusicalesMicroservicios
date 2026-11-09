@@ -16,6 +16,7 @@ namespace POCInstrumentoCuerda
         private readonly TextBox filtroNombre = new TextBox();
         private readonly TextBox filtroPrecioMaximo = new TextBox();
         private List<Instrumento> instrumentos = new List<Instrumento>();
+        private bool listaCargada;
 
         public GUIListarInstrumentoCuerda()
         {
@@ -30,21 +31,13 @@ namespace POCInstrumentoCuerda
             this.StartPosition = FormStartPosition.CenterScreen;
             ServicioObserver.Agregar(this);
             FormClosed += (s, e) => ServicioObserver.Eliminar(this);
-            Shown += async (s, e) => await ListarAsync();
         }
 
         private async Task ListarAsync()
         {
             try
             {
-                double precioMaximo;
-                double? filtroPrecio = null;
-                if (!string.IsNullOrWhiteSpace(filtroPrecioMaximo.Text))
-                {
-                    if (!double.TryParse(filtroPrecioMaximo.Text, out precioMaximo) || precioMaximo < 0)
-                        throw new ArgumentException("El precio máximo debe ser un número mayor o igual a cero.");
-                    filtroPrecio = precioMaximo;
-                }
+                double? filtroPrecio = Validaciones.PrecioMaximoOpcional(filtroPrecioMaximo.Text);
 
                 instrumentos = await GraphQLService.ListarAsync(
                     string.IsNullOrWhiteSpace(filtroNombre.Text) ? null : filtroNombre.Text.Trim(),
@@ -54,16 +47,18 @@ namespace POCInstrumentoCuerda
                 {
                     tableInstrumentosCuerda.Rows.Add(instrumento.id, instrumento.nombre, instrumento.precio,
                         instrumento.fechaVenta, instrumento.numeroTrastes, instrumento.numeroCuerdas,
-                        string.Join(", ", (instrumento.accesorio ?? new List<Accesorio>()).Select(a => a.id)));
+                        string.Join("; ", (instrumento.accesorio ?? new List<Accesorio>())
+                            .Select(a => $"{a.nombre} (${a.precio:0.##}, {a.marca})")));
                 }
+                listaCargada = true;
             }
-            catch (Exception exception) { MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (Exception exception) { MessageBox.Show(Validaciones.MensajeDeError(exception), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
 
 
         public void Cambio()
         {
-            if (IsDisposed || !IsHandleCreated) return;
+            if (!listaCargada || IsDisposed || !IsHandleCreated) return;
             if (InvokeRequired)
             {
                 try { BeginInvoke(new Action(async () => await ListarAsync())); } catch (InvalidOperationException) { }
