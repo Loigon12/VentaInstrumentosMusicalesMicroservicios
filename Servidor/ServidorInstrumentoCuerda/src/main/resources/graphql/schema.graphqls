@@ -3,6 +3,8 @@ type Query {
     instrumentoPorCodigo(codigo: Int!): Instrumento
     accesorio: [AccesorioCuerda]
     accesorioPorCodigo(codigo: Int!): AccesorioCuerda
+    instrumentoViento(nombre: String, precioMaximo: Float): [InstrumentoViento]
+    instrumentoVientoPorCodigo(codigo: Int!): InstrumentoViento
 }
 
 type Mutation {
@@ -12,6 +14,9 @@ type Mutation {
     addAccesorio(input: AccesorioCuerdaInput!): AccesorioCuerda
     delAccesorio(input: Int!): AccesorioCuerda
     editAccesorio(input: AccesorioCuerdaInput!): AccesorioCuerda
+    addInstrumentoViento(input: InstrumentoVientoInput!): InstrumentoViento
+    delInstrumentoViento(input: Int!): InstrumentoViento
+    editInstrumentoViento(input: InstrumentoVientoInput!): InstrumentoViento
 }
 
 input InstrumentoInput {
@@ -25,12 +30,18 @@ input InstrumentoInput {
 
 type Instrumento {
     id: ID
+    objectId: ID
     nombre: String
     precio: Float
     fechaVenta: String
     numeroCuerdas: Int
     numeroTrastes: Int
-    accesorio: [AccesorioCuerda]
+    accesorio: [AccesorioResumen]
+}
+
+# Dentro de Instrumento, cada accesorio vinculado solo muestra su id normal
+type AccesorioResumen {
+    id: ID
 }
 
 input AccesorioCuerdaInput {
@@ -44,14 +55,35 @@ input AccesorioCuerdaInput {
 
 type AccesorioCuerda {
     id: ID
+    objectId: ID
     nombre: String
     tipo: Tipo
     precio: Float
     marca: String
     idInstrumento: ID
+    objectIdInstrumento: ID
 }
 
 enum Tipo {
     CUERDAPULSADA,
     CUERDAFROTADA
+}
+
+input InstrumentoVientoInput {
+    id: ID!
+    nombre: String!
+    precio: Float!
+    fechaVenta: String!
+    numeroLlaves: Int!
+    tipoBoquilla: String!
+}
+
+type InstrumentoViento {
+    id: ID
+    objectId: ID
+    nombre: String
+    precio: Float
+    fechaVenta: String
+    numeroLlaves: Int
+    tipoBoquilla: String
 }

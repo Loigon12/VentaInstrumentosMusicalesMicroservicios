@@ -153,8 +153,11 @@
     <Compile Include="GraphQLService.cs" />
     <Compile Include="ServicioObserver.cs" />
     <Compile Include="GUIAccesorioOperacion.cs" />
+    <Compile Include="GUIVientoOperacion.cs" />
+    <Compile Include="Validaciones.cs" />
     <Compile Include="model\InstrumentoModels.cs" />
     <Compile Include="model\AccesorioModels.cs" />
+    <Compile Include="model\InstrumentoVientoModels.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="GUIActualizarInstrumentoCuerda.resx">

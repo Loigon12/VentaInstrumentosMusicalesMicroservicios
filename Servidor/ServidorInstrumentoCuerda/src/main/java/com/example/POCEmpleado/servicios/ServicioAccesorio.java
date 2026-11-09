@@ -3,80 +3,81 @@ package com.example.POCEmpleado.servicios;
 import com.example.POCEmpleado.model.AccesorioCuerda;
 import com.example.POCEmpleado.model.AccesorioInput;
 import com.example.POCEmpleado.model.Instrumento;
+import com.example.POCEmpleado.repository.AccesorioRepository;
+import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Service
 public class ServicioAccesorio {
 
-    private static List<AccesorioCuerda> accesorios = new ArrayList<>();
+    private final AccesorioRepository accesorioRepository;
+    private final ServicioInstrumento servicioInstrumento;
 
-    public static List<AccesorioCuerda> listAccesorio() {
-        return List.copyOf(accesorios);
+    public ServicioAccesorio(AccesorioRepository accesorioRepository,
+                             ServicioInstrumento servicioInstrumento) {
+        this.accesorioRepository = accesorioRepository;
+        this.servicioInstrumento = servicioInstrumento;
     }
 
-    public static Optional<AccesorioCuerda> buscarAccesorioPorCodigo(int codigo) {
-        return accesorios.stream()
-                .filter(e -> e.getId() == codigo)
-                .findFirst();
+    public List<AccesorioCuerda> listAccesorio() {
+        return accesorioRepository.findAll();
     }
 
-    public static Optional<AccesorioCuerda> addAccesorio(AccesorioInput input) throws Exception {
-        if (buscarAccesorioPorCodigo(input.id()).isPresent()) {
+    public List<AccesorioCuerda> listarPorInstrumento(int idInstrumento) {
+        return accesorioRepository.findByIdInstrumento(idInstrumento);
+    }
+
+    public Optional<AccesorioCuerda> buscarAccesorioPorCodigo(int codigo) {
+        return accesorioRepository.findByCodigo(codigo);
+    }
+
+    public Optional<AccesorioCuerda> addAccesorio(AccesorioInput input) throws Exception {
+        if (accesorioRepository.existsByCodigo(input.id())) {
             throw new Exception("Ya existe un accesorio registrado con el ID " + input.id());
         }
-
-        Optional<Instrumento> instrumento = ServicioInstrumento.buscarPorCodigo(input.idInstrumento());
+        Optional<Instrumento> instrumento = servicioInstrumento.buscarPorCodigo(input.idInstrumento());
         if (instrumento.isEmpty()) {
             throw new Exception("No existe ningún instrumento con el ID " + input.idInstrumento());
         }
 
         AccesorioCuerda accesorio = new AccesorioCuerda(input.id(), input.nombre(), input.tipo(),
                 input.precio(), input.marca(), input.idInstrumento());
-        instrumento.get().addAccesorio(accesorio);
-        accesorios.add(accesorio);
+        accesorio.setObjectIdInstrumento(instrumento.get().getObjectId());
 
-        return Optional.of(accesorio);
+        return Optional.of(accesorioRepository.insert(accesorio));
     }
 
-    public static Optional<AccesorioCuerda> delAccesorio(int codigo) throws Exception {
+    public Optional<AccesorioCuerda> delAccesorio(int codigo) throws Exception {
         Optional<AccesorioCuerda> accesorio = buscarAccesorioPorCodigo(codigo);
         if (accesorio.isEmpty()) {
             throw new Exception("No existe ningún accesorio con el ID " + codigo);
         }
 
-        Optional<Instrumento> instrumento = ServicioInstrumento.buscarPorCodigo(accesorio.get().getIdInstrumento());
-        if (instrumento.isPresent()) {
-            instrumento.get().delAccesorio(accesorio.get());
-        }
-        accesorios.remove(accesorio.get());
+        accesorioRepository.deleteByCodigo(codigo);
 
         return accesorio;
     }
 
-    public static Optional<AccesorioCuerda> editAccesorio(AccesorioInput input) throws Exception {
-        Optional<AccesorioCuerda> actual = buscarAccesorioPorCodigo(input.id());
+    public Optional<AccesorioCuerda> editAccesorio(AccesorioInput input) throws Exception {
+        Optional<AccesorioCuerda> actual = accesorioRepository.findByCodigo(input.id());
         if (actual.isEmpty()) {
             throw new Exception("No existe ningún accesorio con el ID " + input.id());
         }
-
-        Optional<Instrumento> instrumentoNuevo = ServicioInstrumento.buscarPorCodigo(input.idInstrumento());
-        if (instrumentoNuevo.isEmpty()) {
+        Optional<Instrumento> instrumento = servicioInstrumento.buscarPorCodigo(input.idInstrumento());
+        if (instrumento.isEmpty()) {
             throw new Exception("No existe ningún instrumento con el ID " + input.idInstrumento());
         }
 
         AccesorioCuerda nuevo = new AccesorioCuerda(input.id(), input.nombre(), input.tipo(),
                 input.precio(), input.marca(), input.idInstrumento());
+        // Si el accesorio se movió a otro instrumento, la referencia se actualiza al nuevo ObjectId
+        nuevo.setObjectIdInstrumento(instrumento.get().getObjectId());
 
-        // Se retira el accesorio actual de su instrumento original (puede ser el mismo u otro)
-        Optional<Instrumento> instrumentoActual = ServicioInstrumento.buscarPorCodigo(actual.get().getIdInstrumento());
-        if (instrumentoActual.isPresent()) {
-            instrumentoActual.get().delAccesorio(actual.get());
-        }
-        instrumentoNuevo.get().addAccesorio(nuevo);
-        accesorios.set(accesorios.indexOf(actual.get()), nuevo);
+        // Se conserva el ObjectId (_id) del documento existente para reemplazarlo en lugar de crear otro
+        nuevo.setObjectId(actual.get().getObjectId());
 
-        return Optional.of(nuevo);
+        return Optional.of(accesorioRepository.save(nuevo));
     }
 }
