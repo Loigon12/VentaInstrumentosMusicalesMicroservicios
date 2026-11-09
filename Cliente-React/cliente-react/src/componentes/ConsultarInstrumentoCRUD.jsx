@@ -4,18 +4,22 @@ const ENDPOINT = 'http://localhost:8081/graphql';
 
 // Consulta individual por código: interfaz distinta a la del listado.
 const CONSULTA_INSTRUMENTO = `
-  query ConsultarInstrumentoPorCodigo($codigo: Int!) {
-    instrumentoPorCodigo(codigo: $codigo) {
+  query ConsultarInstrumentoConAccesorios($codigo: Int!) {
+    instrumentoConAccesorios(codigo: $codigo) {
       id
       nombre
       precio
       fechaVenta
+      fechaRegistro
       numeroCuerdas
       numeroTrastes
       accesorio {
         id
         nombre
         precio
+        marca
+        idInstrumento
+        fechaRegistro
       }
     }
   }
@@ -64,7 +68,7 @@ export default function ConsultarInstrumentoCRUD() {
     setCargando(true);
     try {
       const data = await graphql(CONSULTA_INSTRUMENTO, { codigo });
-      setInstrumento(data?.instrumentoPorCodigo ?? null);
+      setInstrumento(data?.instrumentoConAccesorios ?? null);
       setIdConsultado(codigo);
     } catch (err) {
       setError(`No se pudo realizar la consulta: ${err.message}`);
@@ -144,6 +148,10 @@ export default function ConsultarInstrumentoCRUD() {
               <dd style={styles.detailValue}>{instrumento.fechaVenta || 'Sin registrar'}</dd>
             </div>
             <div style={styles.detailItem}>
+              <dt style={styles.detailLabel}>Fecha de registro</dt>
+              <dd style={styles.detailValue}>{instrumento.fechaRegistro || 'Sin registrar'}</dd>
+            </div>
+            <div style={styles.detailItem}>
               <dt style={styles.detailLabel}>Número de cuerdas</dt>
               <dd style={styles.detailValue}>{instrumento.numeroCuerdas ?? 'Sin registrar'}</dd>
             </div>
@@ -161,7 +169,7 @@ export default function ConsultarInstrumentoCRUD() {
               {accesoriosVinculados.map(accesorio => (
                 <li key={accesorio.id} style={styles.listItem}>
                   <span style={styles.listName}>{accesorio.nombre}</span>
-                  <span style={styles.listMeta}>#{accesorio.id} · ${Number(accesorio.precio ?? 0).toFixed(2)}</span>
+                  <span style={styles.listMeta}>#{accesorio.id} · ${Number(accesorio.precio ?? 0).toFixed(2)} · {accesorio.marca}</span>
                 </li>
               ))}
             </ul>

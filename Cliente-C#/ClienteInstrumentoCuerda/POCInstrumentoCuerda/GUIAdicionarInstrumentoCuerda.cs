@@ -24,40 +24,21 @@ namespace POCInstrumentoCuerda
         {
             try
             {
+                const string contexto = "crear un instrumento";
                 var input = new InstrumentoInput
                 {
-                    id = ParseInt(txtId.Text, "ID"),
-                    nombre = Required(txtNombre.Text, "Nombre"),
-                    precio = ParseDouble(txtPrecio.Text, "Precio"),
+                    id = Validaciones.Id(txtId.Text, contexto),
+                    nombre = Validaciones.TextoObligatorio(txtNombre.Text, "el nombre", contexto),
+                    precio = Validaciones.Precio(txtPrecio.Text, contexto),
                     fechaVenta = txtFechaVenta.Value.ToString("yyyy-MM-dd"),
-                    numeroCuerdas = ParseInt(txtNumeroCuerdas.Text, "Número de cuerdas"),
-                    numeroTrastes = ParseInt(txtNumeroTrastes.Text, "Número de trastes")
+                    numeroCuerdas = Validaciones.EnteroMayorQueCero(txtNumeroCuerdas.Text, "el número de cuerdas", contexto),
+                    numeroTrastes = Validaciones.EnteroNoNegativo(txtNumeroTrastes.Text, "el número de trastes", contexto)
                 };
                 var created = await GraphQLService.AdicionarAsync(input);
                 MessageBox.Show("Instrumento adicionado con ID " + created.id, "Operación exitosa");
                
             }
-            catch (Exception exception) { MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
-        }
-
-        private static int ParseInt(string value, string field)
-        {
-            int result;
-            if (!int.TryParse(value, out result) || result <= 0) throw new ArgumentException(field + " debe ser un entero positivo.");
-            return result;
-        }
-
-        private static double ParseDouble(string value, string field)
-        {
-            double result;
-            if (!double.TryParse(value, out result) || result <= 0) throw new ArgumentException(field + " debe ser mayor que cero.");
-            return result;
-        }
-
-        private static string Required(string value, string field)
-        {
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException(field + " es obligatorio.");
-            return value.Trim();
+            catch (Exception exception) { MessageBox.Show(Validaciones.MensajeDeError(exception), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
 
         private void label3_Click(object sender, EventArgs e)

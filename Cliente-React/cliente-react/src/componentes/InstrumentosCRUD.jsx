@@ -1,133 +1,111 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { graphql } from '../servicios/graphqlClient';
+import { ServicioObserver } from '../servicios/ServicioObserver';
+import { validarId, validarEntero, validarPrecio, validarTexto, validarFecha, mensajeDeError } from '../servicios/validaciones';
+import { field, th, td, button, buttonSecondary, buttonDanger } from './estilosCRUD';
 
-const ENDPOINT = 'http://localhost:8081/graphql';
-const vacio = { id: '', nombre: '', precio: '', fechaVenta: new Date().toISOString().slice(0, 10), numeroCuerdas: '6', numeroTrastes: '0' };
+const hoy = () => new Date().toISOString().slice(0, 10);
+const vacio = () => ({ id: '', nombre: '', precio: '', fechaVenta: hoy(), numeroCuerdas: '6', numeroTrastes: '0' });
+const ok = (texto) => ({ tipo: 'ok', texto });
+const fallo = (texto) => ({ tipo: 'error', texto });
 
-async function graphql(query, variables = {}) {
-  const response = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, variables })
-  });
-  const json = await response.json();
-  if (!response.ok || json.errors?.length) throw new Error(json.errors?.map(e => e.message).join('\n') || 'Error de conexión');
-  return json.data;
+async function traerInstrumentos(nombreFiltro) {
+  const data = await graphql(`query($nombre:String,$precioMaximo:Float) {
+    instrumento(nombre:$nombre, precioMaximo:$precioMaximo) {
+      id nombre precio fechaVenta fechaRegistro numeroCuerdas numeroTrastes
+      accesorio { id nombre precio marca idInstrumento fechaRegistro }
+    }
+  }`, { nombre: nombreFiltro || null, precioMaximo: null });
+  return data.instrumento || [];
 }
 
 export default function InstrumentosCRUD({ operacion = 'todos' }) {
-  // El "Arreglo original" con todos los datos extraídos del servidor
-  const [listaDatos, setListaDatos] = useState([]); 
-  // Los datos que se van a dibujar en la interfaz (Equivalente a renderizarLista)
-  const [items, setItems] = useState([]); 
-  
+  const [items, setItems] = useState([]);
   const [form, setForm] = useState(vacio);
   const [modo, setModo] = useState('crear');
   const [filtro, setFiltro] = useState('');
-  const [error, setError] = useState('');
+  const [aviso, setAviso] = useState(null);
   const [cargando, setCargando] = useState(false);
-  
-  // Controla si ya se presionó algún botón para mostrar la tabla
-  const [datosCargados, setDatosCargados] = useState(false);
+  // Pasa a true cuando el usuario pulsa Buscar / Mostrar todos: solo desde ahí actúa el observer.
+  const [consultado, setConsultado] = useState(false);
+  const ultimoFiltro = useRef('');
 
-  // Función para obtener TODOS los datos de la base de datos y guardarlos en el arreglo original
-  async function obtenerTodosDelServidor() {
+  // Listar: únicamente se ejecuta desde los botones Buscar / Mostrar todos / Actualizar lista.
+  async function consultar(nombreFiltro) {
+    ultimoFiltro.current = nombreFiltro.trim();
     setCargando(true);
     try {
-      const data = await graphql(`query {
-        instrumento {
-          id nombre precio fechaVenta numeroCuerdas numeroTrastes accesorio { id }
-        }
-      }`);
-      const resultado = data.instrumento || [];
-      setListaDatos(resultado); // Llenamos el arreglo original
-      return resultado;
-    } catch (e) { 
-      setError(`No se pudieron cargar los instrumentos: ${e.message}`); 
-      return [];
-    } finally { 
-      setCargando(false); 
+      setItems(await traerInstrumentos(ultimoFiltro.current));
+      setConsultado(true);
+      setAviso(null);
+    } catch (e) {
+      setAviso(fallo(`No se pudieron cargar los instrumentos: ${mensajeDeError(e)}`));
+    } finally {
+      setCargando(false);
     }
   }
 
-  // 1. Condición para "Buscar": muestra solo el que coincide exactamente con lo ingresado
-  function buscar(terminoIngresado) {
-    if (!terminoIngresado.trim()) {
-      setError('Por favor, ingresa un nombre para buscar.');
-      return;
-    }
-    setError('');
-    // Filtra el arreglo original (ignorando mayúsculas/minúsculas para evitar errores tipográficos)
-    const resultado = listaDatos.filter(item => 
-      item.nombre.toLowerCase() === terminoIngresado.trim().toLowerCase()
-    );
-    setItems(resultado); // Dibuja la lista filtrada
-    setDatosCargados(true);
-  }
+  // Observer: después de la primera consulta, la lista se vuelve a cargar sola (con el mismo
+  // filtro) cada vez que se notifica un cambio de datos (adicionar, actualizar, eliminar).
+  useEffect(() => {
+    if (!consultado) return undefined;
+    const refrescar = async () => {
+      try {
+        setItems(await traerInstrumentos(ultimoFiltro.current));
+      } catch (e) {
+        setAviso(fallo(`No se pudo actualizar la lista: ${mensajeDeError(e)}`));
+      }
+    };
+    return ServicioObserver.agregar(refrescar);
+  }, [consultado]);
 
-  // 2. Condición para "Mostrar todos": carga la lista completa
-  function mostrarTodos() {
-    setItems(listaDatos); // Dibuja el arreglo original completo
-    setDatosCargados(true);
-    setError('');
-  }
-
-  // 3. Condición para "Actualizar lista": Vuelve a consultar la BD y muestra todos
-  async function actualizarLista() {
-    const nuevosDatos = await obtenerTodosDelServidor();
-    setItems(nuevosDatos); // Dibuja los datos recién traídos
-    setDatosCargados(true);
-    setError('');
-  }
-
-  // Al cambiar de operación (vista), limpiamos la tabla y cargamos el arreglo original en segundo plano
-  useEffect(() => { 
-    obtenerTodosDelServidor();
-    setItems([]); 
-    setDatosCargados(false);
-    setFiltro('');
-    setError('');
-  }, [operacion]);
-
-  const cambiar = e => setForm({ ...form, [e.target.name]: e.target.value });
-  const limpiar = () => { setForm({ ...vacio, fechaVenta: new Date().toISOString().slice(0, 10) }); setModo('crear'); setError(''); };
+  const cambiar = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const reiniciarFormulario = () => { setForm(vacio()); setModo('crear'); };
+  const limpiar = () => { reiniciarFormulario(); setAviso(null); };
 
   async function guardar(e) {
-    e.preventDefault(); setError('');
+    e.preventDefault();
+    setAviso(null);
     try {
+      const contexto = modo === 'editar' ? 'actualizar un instrumento' : 'crear un instrumento';
       const input = {
-        id: String(Number(form.id)), nombre: form.nombre.trim(),
-        precio: Number(form.precio), fechaVenta: form.fechaVenta,
-        numeroCuerdas: Number(form.numeroCuerdas), numeroTrastes: Number(form.numeroTrastes)
+        id: String(validarId(form.id, contexto)),
+        nombre: validarTexto(form.nombre, 'el nombre', contexto),
+        precio: validarPrecio(form.precio, contexto),
+        fechaVenta: validarFecha(form.fechaVenta, contexto),
+        numeroCuerdas: validarEntero(form.numeroCuerdas, 'el número de cuerdas', contexto, true),
+        numeroTrastes: validarEntero(form.numeroTrastes, 'el número de trastes', contexto, false)
       };
-      if (!input.id || Number(input.id) <= 0 || !input.nombre || input.precio <= 0 || input.numeroCuerdas <= 0 || input.numeroTrastes < 0)
-        throw new Error('Verifica los campos: ID y nombre obligatorios, precio y cuerdas positivos, trastes no negativos.');
-      
       if (modo === 'editar') {
         await graphql(`mutation($input:InstrumentoInput!){ editInstrumento(input:$input){ id } }`, { input });
       } else {
         await graphql(`mutation($input:InstrumentoInput!){ addInstrumento(input:$input){ id } }`, { input });
       }
-      
-      limpiar(); 
-      await actualizarLista(); // Si se guarda, actualizamos la tabla con los nuevos datos
-      if (operacion === 'adicionar') setError('Instrumento adicionado correctamente.');
-      else setError('Cambios guardados correctamente.');
-    } catch (e) { setError(e.message); }
+      reiniciarFormulario();
+      ServicioObserver.notificarCambio();
+      setAviso(ok(operacion === 'adicionar' ? 'Instrumento adicionado correctamente.' : 'Cambios guardados correctamente.'));
+    } catch (e) {
+      setAviso(fallo(mensajeDeError(e)));
+    }
   }
 
   async function eliminar(id) {
     if (!window.confirm(`¿Eliminar el instrumento ${id}? Sus accesorios asociados también se eliminarán.`)) return;
     try {
-      await graphql(`mutation($id:Int!){ delInstrumento(input:$id){ id } }`, { id: Number(id) });
-      await actualizarLista(); // Si se elimina, actualizamos la tabla
-      setError('Instrumento eliminado correctamente.');
-    } catch (e) { setError(e.message); }
+      const idValido = validarId(id, 'eliminar un instrumento');
+      await graphql(`mutation($id:Int!){ delInstrumento(input:$id){ id } }`, { id: idValido });
+      ServicioObserver.notificarCambio();
+      setAviso(ok('Instrumento eliminado correctamente.'));
+    } catch (e) {
+      setAviso(fallo(mensajeDeError(e)));
+    }
   }
 
   function editar(item) {
     setForm({ id: String(item.id), nombre: item.nombre, precio: String(item.precio),
       fechaVenta: item.fechaVenta, numeroCuerdas: String(item.numeroCuerdas), numeroTrastes: String(item.numeroTrastes) });
-    setModo('editar'); setError('');
+    setModo('editar');
+    setAviso(null);
   }
 
   const mostrarFormulario = operacion === 'adicionar' || (operacion === 'actualizar' && modo === 'editar');
@@ -137,50 +115,39 @@ export default function InstrumentosCRUD({ operacion = 'todos' }) {
   return <section style={{ padding: 24, maxWidth: 1100, margin: '0 auto', color: '#222', background: '#fff', minHeight: 420, boxSizing: 'border-box' }}>
     <h2 style={{ color: '#172554', marginTop: 0 }}>{tituloOperacion(operacion)}</h2>
     <p>{descripcionOperacion(operacion)}</p>
-    {error && <div role="alert" style={{ background: error.toLowerCase().includes('correctamente') ? '#e8f7ec' : '#ffe8e8', color: error.toLowerCase().includes('correctamente') ? '#166534' : '#8b0000', padding: 10, marginBottom: 12, borderRadius: 4 }}>{error}</div>}
+    {aviso && <div role="alert" style={{ background: aviso.tipo === 'ok' ? '#e8f7ec' : '#ffe8e8', color: aviso.tipo === 'ok' ? '#166534' : '#8b0000', padding: 10, marginBottom: 12, borderRadius: 4, whiteSpace: 'pre-line' }}>{aviso.texto}</div>}
 
-    {mostrarFormulario && <form onSubmit={guardar} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10, padding: 16, border: '1px solid #ccc', borderRadius: 6, marginBottom: 20, background: '#f8fafc' }}>
-      <label>ID<input name="id" type="number" min="1" required value={form.id} onChange={cambiar} disabled={modo === 'editar'} style={field}/></label>
-      <label>Nombre<input name="nombre" required value={form.nombre} onChange={cambiar} style={field}/></label>
-      <label>Precio<input name="precio" type="number" min="0.01" step="0.01" required value={form.precio} onChange={cambiar} style={field}/></label>
-      <label>Fecha de venta<input name="fechaVenta" type="date" required value={form.fechaVenta} onChange={cambiar} style={field}/></label>
-      <label>Número de cuerdas<input name="numeroCuerdas" type="number" min="1" required value={form.numeroCuerdas} onChange={cambiar} style={field}/></label>
-      <label>Número de trastes<input name="numeroTrastes" type="number" min="0" required value={form.numeroTrastes} onChange={cambiar} style={field}/></label>
+    {mostrarFormulario && <form noValidate onSubmit={guardar} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10, padding: 16, border: '1px solid #ccc', borderRadius: 6, marginBottom: 20, background: '#f8fafc' }}>
+      <label>ID<input name="id" type="number" value={form.id} onChange={cambiar} disabled={modo === 'editar'} style={field}/></label>
+      <label>Nombre<input name="nombre" value={form.nombre} onChange={cambiar} style={field}/></label>
+      <label>Precio<input name="precio" type="number" step="any" value={form.precio} onChange={cambiar} style={field}/></label>
+      <label>Fecha de venta<input name="fechaVenta" type="date" value={form.fechaVenta} onChange={cambiar} style={field}/></label>
+      <label>Número de cuerdas<input name="numeroCuerdas" type="number" value={form.numeroCuerdas} onChange={cambiar} style={field}/></label>
+      <label>Número de trastes<input name="numeroTrastes" type="number" value={form.numeroTrastes} onChange={cambiar} style={field}/></label>
       <div style={{ display: 'flex', gap: 8, alignItems: 'end' }}>
         <button type="submit" style={button}>{modo === 'editar' ? 'Guardar cambios' : 'Adicionar'}</button>
         <button type="button" style={buttonSecondary} onClick={limpiar}>Limpiar</button>
       </div>
-      {operacion === 'actualizar' && <button type="button" style={buttonSecondary} onClick={() => { limpiar(); }}>Volver a la lista</button>}
+      {operacion === 'actualizar' && <button type="button" style={buttonSecondary} onClick={limpiar}>Volver a la lista</button>}
     </form>}
 
     {mostrarTabla && <>
       {mostrarFiltro && <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <input placeholder="Consultar por nombre exacto" value={filtro} onChange={e => setFiltro(e.target.value)} style={{ ...field, maxWidth: 280, marginTop: 0 }}/>
-        
-        {/* Aquí se aplican las 3 funciones mediante el onClick */}
-        <button style={button} onClick={() => buscar(filtro)}>Buscar</button>
-        <button style={buttonSecondary} onClick={() => { setFiltro(''); mostrarTodos(); }}>Mostrar todos</button>
-        <button style={buttonSecondary} onClick={() => { setFiltro(''); actualizarLista(); }}>Actualizar lista</button>
+        <input placeholder="Consultar por nombre" value={filtro} onChange={e => setFiltro(e.target.value)} style={{ ...field, maxWidth: 280, marginTop: 0 }}/>
+        <button style={button} onClick={() => consultar(filtro)}>Buscar</button>
+        <button style={buttonSecondary} onClick={() => { setFiltro(''); consultar(''); }}>Mostrar todos</button>
+        <button style={buttonSecondary} onClick={() => consultar(filtro)}>Actualizar lista</button>
       </div>}
-      
-      {cargando ? (
-        <p>Cargando instrumentos…</p>
-      ) : datosCargados ? (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead><tr>{['ID','Nombre','Precio','Fecha venta','Cuerdas','Trastes','IDs de accesorios vinculados', ...(operacion === 'actualizar' ? ['Acciones'] : []), ...(operacion === 'eliminar' ? ['Acciones'] : [])].map(x => <th key={x} style={th}>{x}</th>)}</tr></thead>
-            <tbody>{items.map(item => <tr key={item.id}>
-              {[item.id,item.nombre,item.precio,item.fechaVenta,item.numeroCuerdas,item.numeroTrastes,(item.accesorio || []).map(a => a.id).join(', ') || 'Sin accesorios'].map((v,i) => <td key={i} style={td}>{v}</td>)}
-              {operacion === 'actualizar' && <td style={td}><button style={button} onClick={() => editar(item)}>Actualizar</button></td>}
-              {operacion === 'eliminar' && <td style={td}><button style={buttonDanger} onClick={() => eliminar(item.id)}>Eliminar</button></td>}
-            </tr>)}</tbody>
-          </table>
-        </div>
-      ) : (
-        <p style={{ color: '#64748b', fontStyle: 'italic', padding: '20px 0' }}>Haz clic en un botón de búsqueda para visualizar los registros.</p>
-      )}
-      
-      {!cargando && datosCargados && items.length === 0 && <p style={{ color: '#b91c1c' }}>No se encontraron instrumentos con ese nombre.</p>}
+      {cargando ? <p>Cargando instrumentos…</p> : <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <thead><tr>{['ID','Nombre','Precio','Fecha venta','Registro','Cuerdas','Trastes','Accesorios vinculados', ...(operacion === 'actualizar' ? ['Acciones'] : []), ...(operacion === 'eliminar' ? ['Acciones'] : [])].map(x => <th key={x} style={th}>{x}</th>)}</tr></thead>
+        <tbody>{items.map(item => <tr key={item.id}>
+          {[item.id,item.nombre,item.precio,item.fechaVenta,item.fechaRegistro || 'Sin registrar',item.numeroCuerdas,item.numeroTrastes,(item.accesorio || []).map(a => `${a.nombre} ($${Number(a.precio ?? 0).toFixed(2)}, ${a.marca})`).join('; ') || 'Sin accesorios'].map((v,i) => <td key={i} style={td}>{v}</td>)}
+          {operacion === 'actualizar' && <td style={td}><button style={button} onClick={() => editar(item)}>Actualizar</button></td>}
+          {operacion === 'eliminar' && <td style={td}><button style={buttonDanger} onClick={() => eliminar(item.id)}>Eliminar</button></td>}
+        </tr>)}</tbody>
+      </table></div>}
+      {!cargando && !consultado && <p>Pulsa «Buscar» o «Mostrar todos» para ver los instrumentos.</p>}
+      {!cargando && consultado && items.length === 0 && <p>No se encontraron instrumentos.</p>}
     </>}
   </section>;
 }
@@ -189,11 +156,5 @@ function tituloOperacion(op) {
   return ({ adicionar: 'Adicionar instrumento de cuerda', listar: 'Listado de instrumentos de cuerda', consultar: 'Consultar instrumentos de cuerda', actualizar: 'Actualizar instrumento de cuerda', eliminar: 'Eliminar instrumento de cuerda', todos: 'Gestión de instrumentos de cuerda' })[op] || 'Gestión de instrumentos de cuerda';
 }
 function descripcionOperacion(op) {
-  return ({ adicionar: 'Completa los datos para registrar un instrumento.', listar: 'Consulta los instrumentos registrados en el servidor.', consultar: 'Filtra los instrumentos por nombre y revisa sus datos.', actualizar: 'Selecciona un instrumento de la lista para abrir su formulario de actualización.', eliminar: 'Selecciona el instrumento que deseas eliminar.', todos: 'Administra los instrumentos de cuerda registrados mediante GraphQL.' })[op] || '';
+  return ({ adicionar: 'Completa los datos para registrar un instrumento.', listar: 'Pulsa «Buscar» o «Mostrar todos» para consultar los instrumentos registrados en el servidor.', consultar: 'Filtra los instrumentos por nombre y revisa sus datos.', actualizar: 'Selecciona un instrumento de la lista para abrir su formulario de actualización.', eliminar: 'Selecciona el instrumento que deseas eliminar.', todos: 'Administra los instrumentos de cuerda registrados mediante GraphQL.' })[op] || '';
 }
-const field = { display: 'block', boxSizing: 'border-box', width: '100%', padding: 8, marginTop: 4, border: '1px solid #cbd5e1', borderRadius: 4 };
-const th = { textAlign: 'left', padding: 9, borderBottom: '2px solid #172554', background: '#eff6ff' };
-const td = { padding: 9, borderBottom: '1px solid #ddd' };
-const button = { padding: '8px 12px', border: 0, borderRadius: 4, background: '#172554', color: 'white', cursor: 'pointer' };
-const buttonSecondary = { ...button, background: '#e2e8f0', color: '#172554' };
-const buttonDanger = { ...button, background: '#b91c1c' };
