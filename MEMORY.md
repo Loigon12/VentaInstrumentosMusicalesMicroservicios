@@ -3,6 +3,8 @@
 
 ## Ultima tarea completada
 - 2026-10-29: Planes de accion de la auditoria aplicados en Cliente-React: barra de botones por panel en ACCESORIOS (adicionar/listar/consultar/actualizar/eliminar, Enter, recarga desde servidor y acciones por fila) y nueva interfaz de consulta individual de instrumentos de cuerda (ConsultarInstrumentoCRUD.jsx con query instrumentoPorCodigo), sin modificar el listado existente.
+- 2026-11-08: Merge de main resuelto en AccesorioCRUD.jsx conservando la implementación de HEAD; build de React exitoso, lint mantiene errores preexistentes.
+- 2026-11-08: Listados React y C# ajustados para esperar una acción explícita antes de mostrar registros; React compila, C# requiere Developer Pack .NET Framework 4.8 para compilar.
 
 ## Decisiones recientes (no permanentes aun)
 - Prohibicion de modificar codigo de produccion sin autorizacion previa; solo se creo el informe de auditoria y plan de accion.

@@ -38,6 +38,14 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
     return ServicioObserver.agregar(cargarAccesorios);
   }, []);
 
+  const recargarAccesorios = async () => {
+    const data = await graphql(`query { accesorio { id nombre tipo precio marca idInstrumento } }`);
+    const lista = data.accesorio || [];
+    setAccesorios(lista);
+    setErrorCarga('');
+    return lista;
+  };
+
   const cerrarMenus = () => setMenuDesplegado(null);
 
   const toggleMenu = (e, menu) => {
@@ -221,6 +229,8 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         {vistaActual === 'listar' && (
           <VistaListar
             accesorios={accesorios}
+            onRecargar={recargarAccesorios}
+            onEliminar={handleEliminar}
           />
         )}
 
@@ -455,27 +465,41 @@ function VistaEliminar({ accesorios, onEliminar }) {
   );
 }
 
-function VistaListar({ accesorios }) {
-  const [filtros, setFiltros] = useState({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
+function VistaListar({ accesorios, onRecargar, onEliminar }) {
+  const [inputs, setInputs] = useState({ nombre: '', tipo: '', marca: '', idInstrumento: '' });
+  const [itemsMostrar, setItemsMostrar] = useState([]);
+  const [datosCargados, setDatosCargados] = useState(false);
 
-  const filtrados = accesorios.filter(a => {
-    const matchNombre = a.nombre.toLowerCase().includes(filtros.nombre.toLowerCase());
-    const matchTipo = filtros.tipo === '' || a.tipo === filtros.tipo;
-    const matchMarca = a.marca.toLowerCase().includes(filtros.marca.toLowerCase());
-    const matchInst = filtros.idInstrumento === '' || a.idInstrumento.toString() === filtros.idInstrumento;
-    return matchNombre && matchTipo && matchMarca && matchInst;
-  });
+  const aplicarFiltros = () => {
+    setItemsMostrar(filtrarAccesorios(accesorios, inputs));
+    setDatosCargados(true);
+  };
 
-  let errorFiltro = null;
-  if (filtros.idInstrumento.trim() !== '') {
-    try { validarId(filtros.idInstrumento, 'listar accesorios', 'el ID del instrumento'); } catch (err) { errorFiltro = mensajeDeError(err); }
-  }
+  const limpiarFiltros = () => {
+    const vacio = { nombre: '', tipo: '', marca: '', idInstrumento: '' };
+    setInputs(vacio);
+    setItemsMostrar(accesorios);
+    setDatosCargados(true);
+  };
+
+  const actualizarDesdeServidor = async () => {
+    const lista = onRecargar ? await onRecargar() : accesorios;
+    setItemsMostrar(lista);
+    setDatosCargados(true);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      aplicarFiltros();
+    }
+  };
 
   return (
     <div>
       <div style={styles.headerBlock}>
         <h2 style={styles.viewTitle}>Listar por Parámetros</h2>
-        <span style={{ fontSize: '12px', color: '#64748b' }}>{filtrados.length} elementos encontrados</span>
+        {datosCargados && <span style={{ fontSize: '12px', color: '#64748b' }}>{itemsMostrar.length} elementos encontrados</span>}
       </div>
 
       <div style={styles.filterCard}>
@@ -483,13 +507,14 @@ function VistaListar({ accesorios }) {
           <input
             type="text"
             placeholder="Filtrar por Nombre..."
-            value={filtros.nombre}
-            onChange={e => setFiltros({ ...filtros, nombre: e.target.value })}
+            value={inputs.nombre}
+            onChange={e => setInputs({ ...inputs, nombre: e.target.value })}
+            onKeyDown={handleKeyDown}
             style={styles.input}
           />
           <select
-            value={filtros.tipo}
-            onChange={e => setFiltros({ ...filtros, tipo: e.target.value })}
+            value={inputs.tipo}
+            onChange={e => setInputs({ ...inputs, tipo: e.target.value })}
             style={styles.select}
           >
             <option value="">-- Todos los Tipos --</option>
@@ -498,24 +523,44 @@ function VistaListar({ accesorios }) {
           <input
             type="text"
             placeholder="Filtrar Marca..."
-            value={filtros.marca}
-            onChange={e => setFiltros({ ...filtros, marca: e.target.value })}
+            value={inputs.marca}
+            onChange={e => setInputs({ ...inputs, marca: e.target.value })}
+            onKeyDown={handleKeyDown}
             style={styles.input}
           />
           <input
             type="number"
             placeholder="ID Instrumento..."
-            value={filtros.idInstrumento}
-            onChange={e => setFiltros({ ...filtros, idInstrumento: e.target.value })}
+            value={inputs.idInstrumento}
+            onChange={e => setInputs({ ...inputs, idInstrumento: e.target.value })}
+            onKeyDown={handleKeyDown}
             style={styles.input}
           />
         </div>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
+          <button type="button" onClick={aplicarFiltros} style={styles.btnPrimary}>Buscar / Filtrar</button>
+          <button type="button" onClick={limpiarFiltros} style={styles.btnSecondary}>Mostrar todos / Limpiar</button>
+          {onRecargar && <button type="button" onClick={actualizarDesdeServidor} style={styles.btnSecondary}>Actualizar desde servidor</button>}
+        </div>
       </div>
 
-      {errorFiltro && <div role="alert" style={styles.errorBox}>{errorFiltro}</div>}
-      <TablaGeneral lista={filtrados}/>
+      {datosCargados ? (
+        <TablaGeneral lista={itemsMostrar} onEliminar={onEliminar}/>
+      ) : (
+        <div style={styles.emptyPrompt}>Haz clic en Buscar / Filtrar, Mostrar todos / Limpiar o Actualizar desde servidor para visualizar los registros.</div>
+      )}
     </div>
   );
+}
+
+function filtrarAccesorios(accesorios, filtros) {
+  return accesorios.filter(a => {
+    const matchNombre = a.nombre.toLowerCase().includes(filtros.nombre.toLowerCase());
+    const matchTipo = filtros.tipo === '' || a.tipo === filtros.tipo;
+    const matchMarca = a.marca.toLowerCase().includes(filtros.marca.toLowerCase());
+    const matchInst = filtros.idInstrumento === '' || a.idInstrumento.toString() === filtros.idInstrumento;
+    return matchNombre && matchTipo && matchMarca && matchInst;
+  });
 }
 
 function VistaActualizar({ accesorios, editandoId, onSeleccionarId, onGuardar, onCancelar }) {

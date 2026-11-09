@@ -23,6 +23,7 @@ namespace POCInstrumentoCuerda
         private Panel panelCampos;
         private bool observando;
         private bool registroCargado;
+        private bool tablaCargada;
 
         public GUIAccesorioOperacion(string operacion)
         {
@@ -35,7 +36,6 @@ namespace POCInstrumentoCuerda
             {
                 ServicioObserver.Agregar(this);
                 observando = true;
-                Shown += async (s, e) => await CargarTablaAsync();
             }
             FormClosed += (s, e) =>
             {
@@ -202,13 +202,14 @@ namespace POCInstrumentoCuerda
                 tabla.DataSource = null;
                 tabla.DataSource = lista.Select(a => new { a.id, a.nombre, a.tipo, a.precio, a.marca, a.idInstrumento }).ToList();
                 lblEstado.Text = "Accesorios registrados: " + lista.Count;
+                tablaCargada = true;
             }
             catch (Exception ex) { MostrarError(ex); }
         }
 
         public void Cambio()
         {
-            if (operacion != "Listar" || IsDisposed || !IsHandleCreated) return;
+            if (operacion != "Listar" || !tablaCargada || IsDisposed || !IsHandleCreated) return;
             if (InvokeRequired)
             {
                 try { BeginInvoke(new Action(async () => await CargarTablaAsync())); }
