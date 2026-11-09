@@ -41,6 +41,11 @@ public class Controller {
         return servicioInstrumento.buscarPorCodigo(codigo);
     }
 
+    @QueryMapping
+    public Optional<Instrumento> instrumentoConAccesorios(@Argument int codigo) {
+        return servicioInstrumento.buscarPorCodigo(codigo);
+    }
+
     @MutationMapping
     public Optional<Instrumento> addInstrumento(@Argument("input") InstrumentoInput input) throws Exception {
         return servicioInstrumento.addInstrumento(input);

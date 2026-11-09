@@ -12,7 +12,8 @@ const fallo = (texto) => ({ tipo: 'error', texto });
 async function traerInstrumentos(nombreFiltro) {
   const data = await graphql(`query($nombre:String,$precioMaximo:Float) {
     instrumento(nombre:$nombre, precioMaximo:$precioMaximo) {
-      id nombre precio fechaVenta numeroCuerdas numeroTrastes accesorio { id }
+      id nombre precio fechaVenta fechaRegistro numeroCuerdas numeroTrastes
+      accesorio { id nombre precio marca idInstrumento fechaRegistro }
     }
   }`, { nombre: nombreFiltro || null, precioMaximo: null });
   return data.instrumento || [];
@@ -138,9 +139,9 @@ export default function InstrumentosCRUD({ operacion = 'todos' }) {
         <button style={buttonSecondary} onClick={() => consultar(filtro)}>Actualizar lista</button>
       </div>}
       {cargando ? <p>Cargando instrumentos…</p> : <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-        <thead><tr>{['ID','Nombre','Precio','Fecha venta','Cuerdas','Trastes','IDs de accesorios vinculados', ...(operacion === 'actualizar' ? ['Acciones'] : []), ...(operacion === 'eliminar' ? ['Acciones'] : [])].map(x => <th key={x} style={th}>{x}</th>)}</tr></thead>
+        <thead><tr>{['ID','Nombre','Precio','Fecha venta','Registro','Cuerdas','Trastes','Accesorios vinculados', ...(operacion === 'actualizar' ? ['Acciones'] : []), ...(operacion === 'eliminar' ? ['Acciones'] : [])].map(x => <th key={x} style={th}>{x}</th>)}</tr></thead>
         <tbody>{items.map(item => <tr key={item.id}>
-          {[item.id,item.nombre,item.precio,item.fechaVenta,item.numeroCuerdas,item.numeroTrastes,(item.accesorio || []).map(a => a.id).join(', ') || 'Sin accesorios'].map((v,i) => <td key={i} style={td}>{v}</td>)}
+          {[item.id,item.nombre,item.precio,item.fechaVenta,item.fechaRegistro || 'Sin registrar',item.numeroCuerdas,item.numeroTrastes,(item.accesorio || []).map(a => `${a.nombre} ($${Number(a.precio ?? 0).toFixed(2)}, ${a.marca})`).join('; ') || 'Sin accesorios'].map((v,i) => <td key={i} style={td}>{v}</td>)}
           {operacion === 'actualizar' && <td style={td}><button style={button} onClick={() => editar(item)}>Actualizar</button></td>}
           {operacion === 'eliminar' && <td style={td}><button style={buttonDanger} onClick={() => eliminar(item.id)}>Eliminar</button></td>}
         </tr>)}</tbody>

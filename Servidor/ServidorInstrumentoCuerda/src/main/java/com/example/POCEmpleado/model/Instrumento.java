@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Document(collection = "instrumentos")
 public class Instrumento {
@@ -19,6 +20,7 @@ public class Instrumento {
     private String nombre;
     private double precio;
     private LocalDate fechaVenta;
+    private LocalDateTime fechaRegistro;
     private int numeroCuerdas;
     private int numeroTrastes;
 
@@ -36,6 +38,7 @@ public class Instrumento {
         this.nombre = nombre;
         setId(id);
         this.fechaVenta = fechaVenta;
+        this.fechaRegistro = LocalDateTime.now();
         setNombre(nombre);
         setPrecio(precio);
         setNumeroCuerdas(numeroCuerdas);
@@ -91,6 +94,14 @@ public class Instrumento {
 
     public LocalDate getFechaVenta() {
         return fechaVenta;
+    }
+
+    public LocalDateTime getFechaRegistro() {
+        return fechaRegistro;
+    }
+
+    public void setFechaRegistro(LocalDateTime fechaRegistro) {
+        this.fechaRegistro = fechaRegistro;
     }
 
     public void setFechaVenta(LocalDate fechaVenta) {
