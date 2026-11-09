@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +71,9 @@ public class ServicioInstrumentoViento {
         }
         // Se conserva el ObjectId (_id) del documento existente para reemplazarlo en lugar de crear otro
         nuevo.setObjectId(actual.get().getObjectId());
+        if (input.fechaRegistro() == null || input.fechaRegistro().isBlank()) {
+            nuevo.setFechaRegistro(actual.get().getFechaRegistro());
+        }
         return Optional.of(repository.save(nuevo));
     }
 
@@ -80,7 +84,11 @@ public class ServicioInstrumentoViento {
         } catch (DateTimeParseException | NullPointerException e) {
             throw new Exception("La fecha de venta no es válida. Use el formato AAAA-MM-DD.");
         }
-        return new InstrumentoViento(input.id(), input.nombre(), input.precio(), fecha,
-                input.numeroLlaves(), input.tipoBoquilla());
+        InstrumentoViento nuevo = new InstrumentoViento(input.id(), input.nombre(), input.precio(), fecha,
+            input.numeroLlaves(), input.tipoBoquilla());
+        if (input.fechaRegistro() != null && !input.fechaRegistro().isBlank()) {
+            nuevo.setFechaRegistro(LocalDateTime.parse(input.fechaRegistro()));
+        }
+        return nuevo;
     }
 }

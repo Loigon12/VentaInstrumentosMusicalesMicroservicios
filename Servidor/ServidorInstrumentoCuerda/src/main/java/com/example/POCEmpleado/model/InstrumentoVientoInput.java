@@ -5,5 +5,6 @@ public record InstrumentoVientoInput(int id,
                                      double precio,
                                      String fechaVenta,
                                      int numeroLlaves,
-                                     String tipoBoquilla) {
+                                     String tipoBoquilla,
+                                     String fechaRegistro) {
 }

@@ -1,5 +1,6 @@
 package com.example.POCEmpleado.model;
 
+import java.time.LocalDateTime;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -25,6 +26,7 @@ public class AccesorioCuerda {
     private double precio;
     private String marca;
     private int idInstrumento;
+    private LocalDateTime fechaRegistro;
 
     // Referencia al _id (ObjectId) del instrumento al que pertenece el accesorio
     @Field(targetType = FieldType.OBJECT_ID)
@@ -122,6 +124,7 @@ public class AccesorioCuerda {
         setId(id);
         setIdINstrumento(idInstrumento);
         setNombre(nombre);
+        this.fechaRegistro = LocalDateTime.now();
         if (tipo == null) {
             throw new Exception("No se puede crear un accesorio sin tipo.");
         }
@@ -132,5 +135,13 @@ public class AccesorioCuerda {
 
     public String getMarca() {
         return marca;
+    }
+
+    public LocalDateTime getFechaRegistro() {
+        return fechaRegistro;
+    }
+
+    public void setFechaRegistro(LocalDateTime fechaRegistro) {
+        this.fechaRegistro = fechaRegistro;
     }
 }

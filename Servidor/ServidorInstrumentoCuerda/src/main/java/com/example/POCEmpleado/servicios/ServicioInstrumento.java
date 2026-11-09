@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -58,7 +59,10 @@ public class ServicioInstrumento {
             throw new Exception("Ya existe un instrumento registrado con el ID " + input.id());
         }
         Instrumento ins = new Instrumento(input.id(), input.nombre(), input.precio(),
-                LocalDate.parse(input.fechaVenta()), input.numeroCuerdas(), input.numeroTrastes());
+            LocalDate.parse(input.fechaVenta()), input.numeroCuerdas(), input.numeroTrastes());
+        if (input.fechaRegistro() != null && !input.fechaRegistro().isBlank()) {
+            ins.setFechaRegistro(LocalDateTime.parse(input.fechaRegistro()));
+        }
 
         return Optional.of(instrumentoRepository.insert(ins));
     }
@@ -84,6 +88,11 @@ public class ServicioInstrumento {
 
         Instrumento nuevo = new Instrumento(ins.id(), ins.nombre(), ins.precio(),
                 LocalDate.parse(ins.fechaVenta()), ins.numeroCuerdas(), ins.numeroTrastes());
+        if (ins.fechaRegistro() != null && !ins.fechaRegistro().isBlank()) {
+            nuevo.setFechaRegistro(LocalDateTime.parse(ins.fechaRegistro()));
+        } else {
+            nuevo.setFechaRegistro(actual.get().getFechaRegistro());
+        }
         // Se conserva el ObjectId (_id) del documento existente para reemplazarlo en lugar de crear otro
         nuevo.setObjectId(actual.get().getObjectId());
         // Los accesorios viven en su propia colección y siguen enlazados por idInstrumento,

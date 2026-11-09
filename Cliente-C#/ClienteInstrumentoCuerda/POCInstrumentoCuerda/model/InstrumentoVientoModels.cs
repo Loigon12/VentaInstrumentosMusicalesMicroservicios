@@ -9,6 +9,7 @@ namespace POCInstrumentoCuerda.model
         [JsonPropertyName("nombre")] public string nombre { get; set; }
         [JsonPropertyName("precio")] public double precio { get; set; }
         [JsonPropertyName("fechaVenta")] public string fechaVenta { get; set; }
+        [JsonPropertyName("fechaRegistro")] public string fechaRegistro { get; set; }
         [JsonPropertyName("numeroLlaves")] public int numeroLlaves { get; set; }
         [JsonPropertyName("tipoBoquilla")] public string tipoBoquilla { get; set; }
     }

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -8,7 +8,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>POCInstrumentoCuerda</RootNamespace>
     <AssemblyName>POCInstrumentoCuerda</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
@@ -152,8 +152,12 @@
     </Compile>
     <Compile Include="GraphQLService.cs" />
     <Compile Include="ServicioObserver.cs" />
-    <Compile Include="GUIAccesorioOperacion.cs" />
-    <Compile Include="GUIVientoOperacion.cs" />
+    <Compile Include="GUIAccesorioOperacion.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUIVientoOperacion.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Validaciones.cs" />
     <Compile Include="model\InstrumentoModels.cs" />
     <Compile Include="model\AccesorioModels.cs" />

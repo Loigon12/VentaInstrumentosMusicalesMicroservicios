@@ -12,7 +12,7 @@ const fallo = (texto) => ({ tipo: 'error', texto });
 async function traerInstrumentos(nombreFiltro) {
   const data = await graphql(`query($nombre:String,$precioMaximo:Float) {
     instrumentoViento(nombre:$nombre, precioMaximo:$precioMaximo) {
-      id nombre precio fechaVenta numeroLlaves tipoBoquilla
+      id nombre precio fechaVenta fechaRegistro numeroLlaves tipoBoquilla
     }
   }`, { nombre: nombreFiltro || null, precioMaximo: null });
   return data.instrumentoViento || [];
@@ -139,9 +139,9 @@ export default function InstrumentosVientoCRUD({ operacion = 'todos' }) {
         <button style={buttonSecondary} onClick={() => consultar(filtro)}>Actualizar lista</button>
       </div>}
       {cargando ? <p>Cargando instrumentos de viento…</p> : <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-        <thead><tr>{['ID','Nombre','Precio','Fecha venta','Llaves','Tipo de boquilla', ...(operacion === 'actualizar' || operacion === 'eliminar' ? ['Acciones'] : [])].map(x => <th key={x} style={th}>{x}</th>)}</tr></thead>
+        <thead><tr>{['ID','Nombre','Precio','Fecha venta','Registro','Llaves','Tipo de boquilla', ...(operacion === 'actualizar' || operacion === 'eliminar' ? ['Acciones'] : [])].map(x => <th key={x} style={th}>{x}</th>)}</tr></thead>
         <tbody>{items.map(item => <tr key={item.id}>
-          {[item.id,item.nombre,item.precio,item.fechaVenta,item.numeroLlaves,item.tipoBoquilla].map((v,i) => <td key={i} style={td}>{v}</td>)}
+          {[item.id,item.nombre,item.precio,item.fechaVenta,item.fechaRegistro || 'Sin registrar',item.numeroLlaves,item.tipoBoquilla].map((v,i) => <td key={i} style={td}>{v}</td>)}
           {operacion === 'actualizar' && <td style={td}><button style={button} onClick={() => editar(item)}>Actualizar</button></td>}
           {operacion === 'eliminar' && <td style={td}><button style={buttonDanger} onClick={() => eliminar(item.id)}>Eliminar</button></td>}
         </tr>)}</tbody>

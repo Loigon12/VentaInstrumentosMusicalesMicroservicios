@@ -223,6 +223,7 @@ namespace POCInstrumentoCuerda
                     i.nombre,
                     i.precio,
                     i.fechaVenta,
+                    i.fechaRegistro,
                     i.numeroLlaves,
                     i.tipoBoquilla
                 }).ToList();

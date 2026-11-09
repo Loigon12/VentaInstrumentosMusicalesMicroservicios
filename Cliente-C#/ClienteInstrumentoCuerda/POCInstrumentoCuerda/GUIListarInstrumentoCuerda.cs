@@ -47,7 +47,8 @@ namespace POCInstrumentoCuerda
                 {
                     tableInstrumentosCuerda.Rows.Add(instrumento.id, instrumento.nombre, instrumento.precio,
                         instrumento.fechaVenta, instrumento.numeroTrastes, instrumento.numeroCuerdas,
-                        string.Join(", ", (instrumento.accesorio ?? new List<Accesorio>()).Select(a => a.id)));
+                        string.Join("; ", (instrumento.accesorio ?? new List<Accesorio>())
+                            .Select(a => $"{a.nombre} (${a.precio:0.##}, {a.marca})")));
                 }
                 listaCargada = true;
             }

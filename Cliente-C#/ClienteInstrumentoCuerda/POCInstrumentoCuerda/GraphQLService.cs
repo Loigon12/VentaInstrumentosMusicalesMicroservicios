@@ -24,7 +24,7 @@ namespace POCInstrumentoCuerda
             {
                 var response = await client.SendQueryAsync<InstrumentoQueryResponse>(new GraphQLRequest
                 {
-                    Query = "query ($nombre: String, $precioMaximo: Float) { instrumento(nombre: $nombre, precioMaximo: $precioMaximo) { id nombre precio fechaVenta numeroCuerdas numeroTrastes accesorio { id } } }",
+                    Query = "query ($nombre: String, $precioMaximo: Float) { instrumento(nombre: $nombre, precioMaximo: $precioMaximo) { id nombre precio fechaVenta fechaRegistro numeroCuerdas numeroTrastes accesorio { id nombre precio marca idInstrumento fechaRegistro } } }",
                     Variables = new { nombre, precioMaximo }
                 });
                 Validate(response.Errors);
@@ -38,11 +38,11 @@ namespace POCInstrumentoCuerda
             {
                 var response = await client.SendQueryAsync<InstrumentoQueryResponse>(new GraphQLRequest
                 {
-                    Query = "query ($codigo: Int!) { instrumentoPorCodigo(codigo: $codigo) { id nombre precio fechaVenta numeroCuerdas numeroTrastes } }",
+                    Query = "query ($codigo: Int!) { instrumentoConAccesorios(codigo: $codigo) { id nombre precio fechaVenta fechaRegistro numeroCuerdas numeroTrastes accesorio { id nombre precio marca idInstrumento fechaRegistro } } }",
                     Variables = new { codigo = id }
                 });
                 Validate(response.Errors);
-                return response.Data.instrumentoPorCodigo;
+                return response.Data.instrumentoConAccesorios;
             }
         }
 
@@ -52,7 +52,7 @@ namespace POCInstrumentoCuerda
             {
                 var response = await client.SendMutationAsync<InstrumentoMutationResponse>(new GraphQLRequest
                 {
-                    Query = "mutation ($input: InstrumentoInput!) { addInstrumento(input: $input) { id nombre precio fechaVenta numeroCuerdas numeroTrastes } }",
+                    Query = "mutation ($input: InstrumentoInput!) { addInstrumento(input: $input) { id nombre precio fechaVenta fechaRegistro numeroCuerdas numeroTrastes } }",
                     Variables = new { input }
                     
                 });
@@ -68,7 +68,7 @@ namespace POCInstrumentoCuerda
             {
                 var response = await client.SendMutationAsync<InstrumentoMutationResponse>(new GraphQLRequest
                 {
-                    Query = "mutation ($id: Int!) { delInstrumento(input: $id) { id nombre precio fechaVenta numeroCuerdas numeroTrastes } }",
+                    Query = "mutation ($id: Int!) { delInstrumento(input: $id) { id nombre precio fechaVenta fechaRegistro numeroCuerdas numeroTrastes } }",
                     Variables = new { id }
                 });
                 Validate(response.Errors);
@@ -83,7 +83,7 @@ namespace POCInstrumentoCuerda
             {
                 var response = await client.SendMutationAsync<InstrumentoMutationResponse>(new GraphQLRequest
                 {
-                    Query = "mutation ($input: InstrumentoInput!) { editInstrumento(input: $input) { id nombre precio fechaVenta numeroCuerdas numeroTrastes } }",
+                    Query = "mutation ($input: InstrumentoInput!) { editInstrumento(input: $input) { id nombre precio fechaVenta fechaRegistro numeroCuerdas numeroTrastes } }",
                     Variables = new { input }
                 });
                 Validate(response.Errors);
@@ -98,7 +98,7 @@ namespace POCInstrumentoCuerda
             {
                 var response = await client.SendQueryAsync<AccesorioQueryResponse>(new GraphQLRequest
                 {
-                    Query = "{ accesorio { id nombre tipo precio marca idInstrumento } }"
+                    Query = "{ accesorio { id nombre tipo precio marca idInstrumento fechaRegistro } }"
                 });
                 Validate(response.Errors);
                 return response.Data.accesorio ?? new List<Accesorio>();
@@ -166,7 +166,7 @@ namespace POCInstrumentoCuerda
 
         // ---------------- Instrumentos de viento ----------------
 
-        private const string CamposViento = "id nombre precio fechaVenta numeroLlaves tipoBoquilla";
+        private const string CamposViento = "id nombre precio fechaVenta fechaRegistro numeroLlaves tipoBoquilla";
 
         public static async Task<List<InstrumentoViento>> ListarVientoAsync(string nombre, double? precioMaximo)
         {

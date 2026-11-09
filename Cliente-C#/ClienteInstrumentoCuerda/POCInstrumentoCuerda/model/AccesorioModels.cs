@@ -11,6 +11,7 @@ namespace POCInstrumentoCuerda.model
         [JsonPropertyName("precio")] public double precio { get; set; }
         [JsonPropertyName("marca")] public string marca { get; set; }
         [JsonPropertyName("idInstrumento"), JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)] public int idInstrumento { get; set; }
+        [JsonPropertyName("fechaRegistro")] public string fechaRegistro { get; set; }
     }
     public class AccesorioInput
     {

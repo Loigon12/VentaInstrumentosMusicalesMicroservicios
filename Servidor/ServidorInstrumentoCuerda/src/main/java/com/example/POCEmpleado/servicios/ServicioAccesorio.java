@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Service
 public class ServicioAccesorio {
@@ -44,6 +45,9 @@ public class ServicioAccesorio {
 
         AccesorioCuerda accesorio = new AccesorioCuerda(input.id(), input.nombre(), input.tipo(),
                 input.precio(), input.marca(), input.idInstrumento());
+        if (input.fechaRegistro() != null && !input.fechaRegistro().isBlank()) {
+            accesorio.setFechaRegistro(LocalDateTime.parse(input.fechaRegistro()));
+        }
         accesorio.setObjectIdInstrumento(instrumento.get().getObjectId());
 
         return Optional.of(accesorioRepository.insert(accesorio));
@@ -72,6 +76,11 @@ public class ServicioAccesorio {
 
         AccesorioCuerda nuevo = new AccesorioCuerda(input.id(), input.nombre(), input.tipo(),
                 input.precio(), input.marca(), input.idInstrumento());
+        if (input.fechaRegistro() != null && !input.fechaRegistro().isBlank()) {
+            nuevo.setFechaRegistro(LocalDateTime.parse(input.fechaRegistro()));
+        } else {
+            nuevo.setFechaRegistro(actual.get().getFechaRegistro());
+        }
         // Si el accesorio se movió a otro instrumento, la referencia se actualiza al nuevo ObjectId
         nuevo.setObjectIdInstrumento(instrumento.get().getObjectId());
 
