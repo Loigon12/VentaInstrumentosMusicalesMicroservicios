@@ -48,7 +48,13 @@ public class Controller {
 
     @MutationMapping
     public Optional<Instrumento> addInstrumento(@Argument("input") InstrumentoInput input) throws Exception {
-        return servicioInstrumento.addInstrumento(input);
+         try {
+            return servicioInstrumento.addInstrumento(input);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Error al adicionar el instrumento");
+        }
     }
 
     @MutationMapping

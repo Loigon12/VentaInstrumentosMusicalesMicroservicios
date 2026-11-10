@@ -129,20 +129,5 @@ namespace POCInstrumentoCuerda
         {
             return string.IsNullOrEmpty(texto) ? texto : char.ToUpper(texto[0]) + texto.Substring(1);
         }
-
-        public static async Task<int> IdNoExistenteAsync(
-        int id,
-        string contexto,
-        Func<int, Task<bool>> existeAsync)
-        {
-            if (await existeAsync(id))
-            {
-                throw new InvalidOperationException(
-                    "El ID " + id + " ya existe. Ingrese un ID diferente."
-                );
-            }
-
-            return id;
-        }
     }
 }
