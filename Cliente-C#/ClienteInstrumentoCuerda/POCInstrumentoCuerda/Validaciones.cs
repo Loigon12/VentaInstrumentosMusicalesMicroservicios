@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace POCInstrumentoCuerda
@@ -33,7 +35,13 @@ namespace POCInstrumentoCuerda
         {
             return Entero(valor, campo, contexto, false);
         }
-
+        public static void VerificarIdDuplicado(int id, IEnumerable<int> idsExistentes)
+        {
+            if (idsExistentes != null && idsExistentes.Contains(id))
+            {
+                throw new InvalidOperationException("El ID ya existe.");
+            }
+        }
         public static double Precio(string valor, string contexto)
         {
             if (string.IsNullOrWhiteSpace(valor)) throw Faltante("el precio", contexto);
@@ -61,26 +69,44 @@ namespace POCInstrumentoCuerda
         }
 
         /// <summary>Texto para mostrar al usuario a partir de cualquier excepción.</summary>
+        /// <summary>Texto para mostrar al usuario a partir de cualquier excepción.</summary>
         public static string MensajeDeError(Exception ex)
         {
             if (ex == null) return "Ocurrió un error inesperado.";
 
-            // Errores de validación propios y errores devueltos por el servidor GraphQL.
+            // 1. Interceptar errores de duplicidad
+            if (!string.IsNullOrWhiteSpace(ex.Message))
+            {
+                string msg = ex.Message.ToLowerInvariant();
+
+                bool errorMongoDb = msg.Contains("e11000") || msg.Contains("duplicate key");
+                bool errorGraphQl = msg.Contains("ya existe") || msg.Contains("already exists");
+
+                // Atrapa el error genérico oculto
+                bool errorGenericoOculto = msg.Contains("internal_error for");
+
+                if (errorMongoDb || errorGraphQl || errorGenericoOculto)
+                {
+                    return "El ID ya existe.";
+                }
+            }
+
+            // 2. Errores de validación propios locales
             if (ex is ArgumentException || ex is InvalidOperationException) return ex.Message;
 
-            // Problemas de red: el servidor no está en ejecución o no responde.
+            // 3. Problemas de red
             for (Exception actual = ex; actual != null; actual = actual.InnerException)
             {
                 string tipo = actual.GetType().Name;
                 if (tipo == "HttpRequestException" || tipo == "WebException" || tipo == "SocketException" ||
                     tipo == "TaskCanceledException" || tipo == "TimeoutException" || tipo == "GraphQLHttpRequestException")
                 {
-                    return "No se pudo conectar con el servidor. Verifique que esté en ejecución en http://localhost:8081/graphql.";
+                    return "No se pudo conectar con el servidor. Verifique que esté en ejecución.";
                 }
             }
-
             return string.IsNullOrWhiteSpace(ex.Message) ? "Ocurrió un error inesperado." : ex.Message;
         }
+
 
         private static int Entero(string valor, string campo, string contexto, bool soloPositivo)
         {
