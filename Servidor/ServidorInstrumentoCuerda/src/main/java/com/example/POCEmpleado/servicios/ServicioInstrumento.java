@@ -1,77 +1,103 @@
 package com.example.POCEmpleado.servicios;
 
-import com.example.POCEmpleado.model.AccesorioCuerda;
 import com.example.POCEmpleado.model.Instrumento;
 import com.example.POCEmpleado.model.InstrumentoInput;
+import com.example.POCEmpleado.repository.AccesorioRepository;
+import com.example.POCEmpleado.repository.InstrumentoRepository;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
+@Service
 public class ServicioInstrumento {
-    private static List<Instrumento> instrumentos = new ArrayList<>();
 
-    public static List<Instrumento> listarInstrumentos() {
-        return List.copyOf(instrumentos);
+    private final InstrumentoRepository instrumentoRepository;
+    private final AccesorioRepository accesorioRepository;
+    private final MongoTemplate mongoTemplate;
+
+    public ServicioInstrumento(InstrumentoRepository instrumentoRepository,
+                               AccesorioRepository accesorioRepository,
+                               MongoTemplate mongoTemplate) {
+        this.instrumentoRepository = instrumentoRepository;
+        this.accesorioRepository = accesorioRepository;
+        this.mongoTemplate = mongoTemplate;
     }
 
-    public static List<Instrumento> listarInstrumentos(String nombre, Double precioMaximo) {
-        return instrumentos.stream()
-                .filter(instrumento -> nombre == null || nombre.isBlank()
-                        || instrumento.getNombre().toLowerCase().contains(nombre.toLowerCase()))
-                .filter(instrumento -> precioMaximo == null || instrumento.getPrecio() <= precioMaximo)
-                .toList();
+    public List<Instrumento> listarInstrumentos() {
+        return instrumentoRepository.findAll();
     }
 
-    public static Optional<Instrumento> buscarPorCodigo(int codigo) {
-        return instrumentos.stream()
-                .filter(e -> e.getId() == codigo)
-                .findFirst();
+    /**
+     * Filtra directamente en MongoDB: nombre que contenga el texto (sin distinguir mayúsculas)
+     * y precio menor o igual al máximo. Los filtros null o vacíos se ignoran.
+     */
+    public List<Instrumento> listarInstrumentos(String nombre, Double precioMaximo) {
+        Query query = new Query();
+        if (nombre != null && !nombre.isBlank()) {
+            query.addCriteria(Criteria.where("nombre")
+                    .regex(Pattern.compile(Pattern.quote(nombre), Pattern.CASE_INSENSITIVE)));
+        }
+        if (precioMaximo != null) {
+            query.addCriteria(Criteria.where("precio").lte(precioMaximo));
+        }
+        return mongoTemplate.find(query, Instrumento.class);
     }
 
-    public static Optional<Instrumento> addInstrumento(InstrumentoInput input) throws Exception {
-        if (buscarPorCodigo(input.id()).isPresent()) {
+    public Optional<Instrumento> buscarPorCodigo(int codigo) {
+        return instrumentoRepository.findByCodigo(codigo);
+    }
+
+    public Optional<Instrumento> addInstrumento(InstrumentoInput input) throws Exception {
+        if (instrumentoRepository.existsByCodigo(input.id())) {
             throw new Exception("Ya existe un instrumento registrado con el ID " + input.id());
         }
         Instrumento ins = new Instrumento(input.id(), input.nombre(), input.precio(),
-                LocalDate.parse(input.fechaVenta()), input.numeroCuerdas(), input.numeroTrastes());
-        instrumentos.add(ins);
+            LocalDate.parse(input.fechaVenta()), input.numeroCuerdas(), input.numeroTrastes());
+        if (input.fechaRegistro() != null && !input.fechaRegistro().isBlank()) {
+            ins.setFechaRegistro(LocalDateTime.parse(input.fechaRegistro()));
+        }
 
-        return Optional.of(ins);
+        return Optional.of(instrumentoRepository.insert(ins));
     }
 
-    public static Optional<Instrumento> delInstrumento(int codigo) throws Exception {
+    public Optional<Instrumento> delInstrumento(int codigo) throws Exception {
         Optional<Instrumento> instrumento = buscarPorCodigo(codigo);
         if (instrumento.isEmpty()) {
             throw new Exception("No se ha encontrado ningun instrumento para eliminar");
         }
 
-        Instrumento ins = instrumento.get();
         // Los accesorios dependen del instrumento: se eliminan con él para no dejarlos huérfanos
-        for (AccesorioCuerda accesorio : List.copyOf(ins.getAccesorio())) {
-            ServicioAccesorio.delAccesorio(accesorio.getId());
-        }
-        instrumentos.remove(ins);
+        accesorioRepository.deleteByIdInstrumento(codigo);
+        instrumentoRepository.deleteByCodigo(codigo);
 
-        return Optional.of(ins);
+        return instrumento;
     }
 
-    public static Optional<Instrumento> editInstrumento(InstrumentoInput ins) throws Exception {
-        Optional<Instrumento> actual = buscarPorCodigo(ins.id());
+    public Optional<Instrumento> editInstrumento(InstrumentoInput ins) throws Exception {
+        Optional<Instrumento> actual = instrumentoRepository.findByCodigo(ins.id());
         if (actual.isEmpty()) {
             throw new Exception("No se ha encontrado ningun instrumento para actualizar");
         }
 
         Instrumento nuevo = new Instrumento(ins.id(), ins.nombre(), ins.precio(),
                 LocalDate.parse(ins.fechaVenta()), ins.numeroCuerdas(), ins.numeroTrastes());
-        // Se conservan los accesorios que ya tenía asignados
-        for (AccesorioCuerda accesorio : actual.get().getAccesorio()) {
-            nuevo.addAccesorio(accesorio);
+        if (ins.fechaRegistro() != null && !ins.fechaRegistro().isBlank()) {
+            nuevo.setFechaRegistro(LocalDateTime.parse(ins.fechaRegistro()));
+        } else {
+            nuevo.setFechaRegistro(actual.get().getFechaRegistro());
         }
-        instrumentos.set(instrumentos.indexOf(actual.get()), nuevo);
+        // Se conserva el ObjectId (_id) del documento existente para reemplazarlo en lugar de crear otro
+        nuevo.setObjectId(actual.get().getObjectId());
+        // Los accesorios viven en su propia colección y siguen enlazados por idInstrumento,
+        // por lo que se conservan sin necesidad de copiarlos.
 
-        return Optional.of(nuevo);
+        return Optional.of(instrumentoRepository.save(nuevo));
     }
-
 }

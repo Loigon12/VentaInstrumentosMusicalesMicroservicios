@@ -5,5 +5,6 @@ public record AccesorioInput(int id,
                              AccesorioCuerda.tipo tipo,
                              double precio,
                              String marca,
-                             int idInstrumento) {
+                             int idInstrumento,
+                             String fechaRegistro) {
 }
