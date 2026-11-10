@@ -26,11 +26,9 @@ export default function InstrumentosVientoCRUD({ operacion = 'todos' }) {
   const [filtro, setFiltro] = useState('');
   const [aviso, setAviso] = useState(null);
   const [cargando, setCargando] = useState(false);
-  // Pasa a true cuando el usuario pulsa Buscar / Mostrar todos: solo desde ahí actúa el observer.
   const [consultado, setConsultado] = useState(false);
   const ultimoFiltro = useRef('');
 
-  // Listar: únicamente se ejecuta desde los botones Buscar / Mostrar todos / Actualizar lista.
   async function consultar(nombreFiltro) {
     ultimoFiltro.current = nombreFiltro.trim();
     setCargando(true);
@@ -45,8 +43,6 @@ export default function InstrumentosVientoCRUD({ operacion = 'todos' }) {
     }
   }
 
-  // Observer: después de la primera consulta, la lista se recarga sola (con el mismo filtro)
-  // cada vez que se notifica un cambio de datos.
   useEffect(() => {
     if (!consultado) return undefined;
     const refrescar = async () => {
@@ -68,14 +64,25 @@ export default function InstrumentosVientoCRUD({ operacion = 'todos' }) {
     setAviso(null);
     try {
       const contexto = modo === 'editar' ? 'actualizar un instrumento de viento' : 'crear un instrumento de viento';
+      const idValido = validarId(form.id, contexto);
+
+      // Validación: Comprobar si el ID ya existe antes de adicionar el registro
+      if (modo === 'crear') {
+        const todos = await traerInstrumentos('');
+        if (todos.some(i => String(i.id) === String(idValido))) {
+          throw new Error(`Ya existe un instrumento de viento con el ID ${idValido}. Ingrese uno diferente.`);
+        }
+      }
+
       const input = {
-        id: String(validarId(form.id, contexto)),
+        id: String(idValido),
         nombre: validarTexto(form.nombre, 'el nombre', contexto),
         precio: validarPrecio(form.precio, contexto),
         fechaVenta: validarFecha(form.fechaVenta, contexto),
         numeroLlaves: validarEntero(form.numeroLlaves, 'el número de llaves', contexto, false),
         tipoBoquilla: validarTexto(form.tipoBoquilla, 'el tipo de boquilla', contexto)
       };
+
       if (modo === 'editar') {
         await graphql(`mutation($input:InstrumentoVientoInput!){ editInstrumentoViento(input:$input){ id } }`, { input });
       } else {
