@@ -50,6 +50,15 @@ namespace POCInstrumentoCuerda
         {
             using (var client = CreateClient())
             {
+                var instrumentoExistente = await BuscarAsync(input.id);
+
+                if (instrumentoExistente != null)
+                {
+                    throw new InvalidOperationException(
+                        "Ya existe un instrumento de cuerda con el ID " + input.id +
+                        ". Ingrese un ID diferente."
+                    );
+                }
                 var response = await client.SendMutationAsync<InstrumentoMutationResponse>(new GraphQLRequest
                 {
                     Query = "mutation ($input: InstrumentoInput!) { addInstrumento(input: $input) { id nombre precio fechaVenta fechaRegistro numeroCuerdas numeroTrastes } }",

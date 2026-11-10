@@ -21,8 +21,7 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
   const [errorCarga, setErrorCarga] = useState('');
 
   // 1. CARGAR ACCESORIOS (Query). Además de cargar al abrir, el componente se registra como
-  //    observador: cuando otra operación notifica un cambio (por ejemplo, eliminar un instrumento
-  //    también elimina sus accesorios) la lista se vuelve a consultar.
+  //    observador: cuando otra operación notifica un cambio la lista se vuelve a consultar.
   useEffect(() => {
     const cargarAccesorios = async () => {
       try {
@@ -58,26 +57,31 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
     setMenuDesplegado(null);
   };
 
-  // 2. ADICIONAR ACCESORIO (Mutation). Si falla lanza un Error con el mensaje del servidor
-  //    para que el formulario lo muestre al usuario.
+  // 2. ADICIONAR ACCESORIO (Mutation). 
   const handleAdicionar = async (nuevo) => {
+    // Verificación final de ID duplicado antes de enviar la mutación (Doble capa de seguridad)
+    const dataVerificacion = await graphql(`query { accesorio { id } }`);
+    const listaActualizada = dataVerificacion?.accesorio || [];
+    if (listaActualizada.some(a => String(a.id) === String(nuevo.id))) {
+      throw new Error(`Ya existe un accesorio registrado con el ID ${nuevo.id}. Ingrese un ID diferente.`);
+    }
+
     const data = await graphql(
       `mutation AddAccesorio($input: AccesorioCuerdaInput!) {
         addAccesorio(input: $input) { id nombre tipo precio marca idInstrumento }
       }`,
       {
         input: {
-          id: String(nuevo.id), // El esquema pide ID!
+          id: String(nuevo.id),
           nombre: nuevo.nombre,
-          tipo: nuevo.tipo, // Solo CUERDAPULSADA o CUERDAFROTADA
+          tipo: nuevo.tipo,
           precio: Number(nuevo.precio),
           marca: nuevo.marca,
-          idInstrumento: String(nuevo.idInstrumento) // El esquema pide ID!
+          idInstrumento: String(nuevo.idInstrumento)
         }
       }
     );
 
-    // Usar el registro devuelto por el servidor evita diferencias de tipo en los ID.
     const creado = data?.addAccesorio;
     if (!creado) throw new Error('El servidor no devolvió el accesorio creado.');
     setAccesorios(prev => [...prev.filter(a => String(a.id) !== String(creado.id)), creado]);
@@ -92,7 +96,7 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       const idValido = validarId(id, 'eliminar un accesorio');
       await graphql(
         `mutation DelAccesorio($input: Int!) { delAccesorio(input: $input) { id } }`,
-        { input: idValido } // El esquema pide Int!
+        { input: idValido }
       );
       setAccesorios(prev => prev.filter(a => String(a.id) !== String(id)));
       ServicioObserver.notificarCambio();
@@ -106,7 +110,7 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
     cambiarVista('actualizar');
   };
 
-  // 4. ACTUALIZAR ACCESORIO (Mutation). Si falla lanza un Error para que el formulario lo muestre.
+  // 4. ACTUALIZAR ACCESORIO (Mutation). 
   const handleGuardarActualizacion = async (accesorioActualizado) => {
     const data = await graphql(
       `mutation EditAccesorio($input: AccesorioCuerdaInput!) {
@@ -137,7 +141,6 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
   return (
     <div style={embebido ? styles.embeddedFrame : styles.windowFrame} onClick={cerrarMenus}>
       {!embebido && <>
-      {/* Barra de título de la ventana independiente */}
       <div style={styles.windowTitleBar}>
         <div style={styles.titleLeft}>
           <span style={styles.titleText}>Venta de Instrumentos Musicales</span>
@@ -149,7 +152,6 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
         </div>
       </div>
 
-      {/* Navegación principal con el mismo estilo visual del cliente original */}
       <nav style={styles.navbar} onClick={(e) => e.stopPropagation()}>
         <button type="button" style={styles.navMenuBtn(false)} onClick={() => cambiarVista('inicio')}>Inicio</button>
 
@@ -206,7 +208,6 @@ export default function AccesorioCRUD({ vistaInicial = 'inicio', embebido = fals
       </nav>
       </>}
 
-      {/* Área de contenido de la operación seleccionada en el menú principal */}
       <main style={embebido ? styles.embeddedContentArea : styles.contentArea}>
         {errorCarga && <div role="alert" style={styles.errorBox}>{errorCarga}</div>}
         {vistaActual === 'inicio' && <VistaInicio />}
@@ -300,7 +301,7 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
   const [form, setForm] = useState({
     id: '',
     nombre: '',
-    tipo: TipoAccesorio.CUERDAPULSADA, // Valor por defecto actualizado
+    tipo: TipoAccesorio.CUERDAPULSADA, 
     precio: '',
     marca: '',
     idInstrumento: ''
@@ -318,9 +319,12 @@ function VistaAdicionar({ accesorios, onGuardar, onCancelar }) {
       const precio = validarPrecio(form.precio, contexto);
       const marca = validarTexto(form.marca, 'la marca', contexto);
       const idInstrumento = validarId(form.idInstrumento, contexto, 'el ID del instrumento');
+      
+      // Validación Frontend de ID duplicado[cite: 1]
       if (accesorios.some(a => parseInt(a.id) === id)) {
         throw new Error(`Ya existe un accesorio con el ID ${id}. Ingrese uno diferente.`);
       }
+      
       await onGuardar({ id, nombre, tipo: form.tipo, precio, marca, idInstrumento });
     } catch (err) {
       setError(mensajeDeError(err));

@@ -34,7 +34,20 @@ namespace POCInstrumentoCuerda
                     numeroCuerdas = Validaciones.EnteroMayorQueCero(txtNumeroCuerdas.Text, "el número de cuerdas", contexto),
                     numeroTrastes = Validaciones.EnteroNoNegativo(txtNumeroTrastes.Text, "el número de trastes", contexto)
                 };
+
+                await Validaciones.IdNoExistenteAsync(
+                    input.id,
+                    "crear un instrumento",
+                    async id =>
+                    {
+                        var instrumentos = await GraphQLService.ListarAsync(null, null);
+                        return instrumentos.Any(i => i.id == id);
+                    }
+                );
+
                 var created = await GraphQLService.AdicionarAsync(input);
+
+               
                 MessageBox.Show("Instrumento adicionado con ID " + created.id, "Operación exitosa");
                
             }

@@ -55,13 +55,16 @@ public class ServicioInstrumento {
     }
 
     public Optional<Instrumento> addInstrumento(InstrumentoInput input) throws Exception {
-        if (instrumentoRepository.existsByCodigo(input.id())) {
-            throw new Exception("Ya existe un instrumento registrado con el ID " + input.id());
-        }
+        
         Instrumento ins = new Instrumento(input.id(), input.nombre(), input.precio(),
             LocalDate.parse(input.fechaVenta()), input.numeroCuerdas(), input.numeroTrastes());
         if (input.fechaRegistro() != null && !input.fechaRegistro().isBlank()) {
             ins.setFechaRegistro(LocalDateTime.parse(input.fechaRegistro()));
+        }
+
+
+        if (instrumentoRepository.existsByCodigo(input.id())) {
+            throw new Exception("Ya existe un instrumento registrado con el ID " + input.id());
         }
 
         return Optional.of(instrumentoRepository.insert(ins));
