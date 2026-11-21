@@ -12,12 +12,15 @@ import java.util.List;
 @Service
 public class ProveedorService {
     private final ProveedorRepository repository;
+    private final InstrumentoCatalogClient instrumentoCatalogClient;
 
-    public ProveedorService(ProveedorRepository repository) {
+    public ProveedorService(ProveedorRepository repository, InstrumentoCatalogClient instrumentoCatalogClient) {
         this.repository = repository;
+        this.instrumentoCatalogClient = instrumentoCatalogClient;
     }
 
     public Proveedor crear(ProveedorRequest request) {
+        validarInstrumento(request.idInstrumento());
         if (repository.existsByCodigo(request.codigo())) {
             throw new DuplicateProveedorException("Ya existe un proveedor con el código " + request.codigo());
         }
@@ -50,8 +53,15 @@ public class ProveedorService {
         if (!actual.getNit().equals(request.nit().trim()) && repository.existsByNit(request.nit().trim())) {
             throw new DuplicateProveedorException("Ya existe un proveedor con el NIT " + request.nit());
         }
+        validarInstrumento(request.idInstrumento());
         actual.actualizarDatos(request);
         return repository.save(actual);
+    }
+
+    private void validarInstrumento(int idInstrumento) {
+        if (!instrumentoCatalogClient.existePorId(idInstrumento)) {
+            throw new IllegalArgumentException("No existe un instrumento con el ID " + idInstrumento);
+        }
     }
 
     public void eliminar(int codigo) {

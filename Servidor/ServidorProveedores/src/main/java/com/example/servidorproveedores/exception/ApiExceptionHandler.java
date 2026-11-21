@@ -16,6 +16,11 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
+    @ExceptionHandler(InstrumentosServiceUnavailableException.class)
+    public ProblemDetail manejarServicioInstrumentosNoDisponible(InstrumentosServiceUnavailableException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+    }
+
     @ExceptionHandler({DuplicateProveedorException.class, DuplicateKeyException.class})
     public ProblemDetail manejarDuplicado(RuntimeException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
