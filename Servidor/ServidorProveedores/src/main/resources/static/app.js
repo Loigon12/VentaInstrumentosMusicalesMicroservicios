@@ -43,6 +43,16 @@ function hideNotice() {
     notice.className = "notice";
 }
 
+function renderEmptyTablePrompt(message = "Ingresa un código y presiona «Buscar», o pulsa «Actualizar lista» para mostrar los proveedores.") {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 5;
+    cell.className = "table-message";
+    cell.textContent = message;
+    row.append(cell);
+    supplierList.replaceChildren(row);
+}
+
 function setView(view) {
     if (!Object.prototype.hasOwnProperty.call(viewTitles, view)) return;
     for (const [name] of Object.entries(viewTitles)) {
@@ -57,7 +67,10 @@ function setView(view) {
     menuButton.setAttribute("aria-expanded", "false");
     hideNotice();
 
-    if (view === "listar") loadSuppliers();
+    if (view === "listar") {
+        document.querySelector("#list-search-code").value = "";
+        renderEmptyTablePrompt();
+    }
 }
 
 function createCell(row, value) {
@@ -80,13 +93,7 @@ function renderSuppliers(suppliers) {
     supplierList.replaceChildren();
 
     if (suppliers.length === 0) {
-        const row = document.createElement("tr");
-        const cell = document.createElement("td");
-        cell.colSpan = 5;
-        cell.className = "table-message";
-        cell.textContent = "No se encontraron proveedores.";
-        row.append(cell);
-        supplierList.append(row);
+        renderEmptyTablePrompt("No se encontraron proveedores.");
         return;
     }
 
@@ -109,33 +116,38 @@ function renderSuppliers(suppliers) {
     }
 }
 
-async function loadSuppliers(name = "") {
-    const loadingRow = document.createElement("tr");
-    const loadingCell = document.createElement("td");
-    loadingCell.colSpan = 5;
-    loadingCell.className = "table-message";
-    loadingCell.textContent = "Cargando proveedores...";
-    loadingRow.append(loadingCell);
-    supplierList.replaceChildren(loadingRow);
+async function loadSuppliers() {
+    renderEmptyTablePrompt("Cargando proveedores...");
     hideNotice();
 
     try {
-        const url = new URL(apiUrl, window.location.origin);
-        if (name.trim()) url.searchParams.set("nombre", name.trim());
-        const suppliers = await request(url);
+        const suppliers = await request(apiUrl);
         if (!Array.isArray(suppliers)) throw new Error("El servicio devolvió una lista de proveedores inválida.");
         renderSuppliers(suppliers);
-        if (!name.trim()) supplierCount.textContent = suppliers.length.toLocaleString("es");
+        supplierCount.textContent = suppliers.length.toLocaleString("es");
     } catch (error) {
         supplierCount.textContent = "—";
-        const row = document.createElement("tr");
-        const cell = document.createElement("td");
-        cell.colSpan = 5;
-        cell.className = "table-message";
-        cell.textContent = error.message;
-        row.append(cell);
-        supplierList.replaceChildren(row);
+        renderEmptyTablePrompt(error.message);
         showNotice("No fue posible cargar los proveedores. Verifica que el servicio esté disponible.", true);
+    }
+}
+
+async function loadSupplierByCode(value) {
+    const trimmed = String(value ?? "").trim();
+    if (!trimmed) {
+        renderEmptyTablePrompt();
+        return;
+    }
+
+    renderEmptyTablePrompt("Buscando proveedor...");
+    hideNotice();
+
+    try {
+        const supplier = await findSupplierByCode(trimmed);
+        renderSuppliers([supplier]);
+    } catch (error) {
+        renderEmptyTablePrompt(error.message);
+        showNotice("No fue posible buscar el proveedor.", true);
     }
 }
 
@@ -302,16 +314,24 @@ document.querySelector("#create-form").addEventListener("submit", async (event) 
 
 document.querySelector("#list-search-form").addEventListener("submit", (event) => {
     event.preventDefault();
-    loadSuppliers(document.querySelector("#list-search-name").value);
+    const form = event.currentTarget;
+    const input = document.querySelector("#list-search-code");
+    if (!input.value.trim() || !form.reportValidity()) {
+        renderEmptyTablePrompt();
+        return;
+    }
+    loadSupplierByCode(input.value);
 });
 
 document.querySelector("#list-clear-search").addEventListener("click", () => {
-    document.querySelector("#list-search-name").value = "";
-    loadSuppliers();
+    document.querySelector("#list-search-code").value = "";
+    renderEmptyTablePrompt();
+    hideNotice();
 });
 
 document.querySelector("#list-refresh").addEventListener("click", () => {
-    loadSuppliers(document.querySelector("#list-search-name").value);
+    document.querySelector("#list-search-code").value = "";
+    loadSuppliers();
 });
 
 document.querySelector("#consult-by").addEventListener("change", (event) => {
