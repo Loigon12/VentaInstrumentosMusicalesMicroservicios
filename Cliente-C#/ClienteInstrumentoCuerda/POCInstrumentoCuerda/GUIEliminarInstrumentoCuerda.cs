@@ -28,7 +28,7 @@ namespace POCInstrumentoCuerda
         {
             try
             {
-                instrumentoEncontrado = await GraphQLService.BuscarAsync(ParseId(txtBuscarId.Text));
+                instrumentoEncontrado = await GraphQLService.BuscarAsync(Validaciones.Id(txtBuscarId.Text, "eliminar un instrumento"));
                 if (instrumentoEncontrado == null)
                 {
                     btnEliminar.Enabled = false;
@@ -38,11 +38,16 @@ namespace POCInstrumentoCuerda
                 GUIConsultaInstrumentoCuerda.ShowDetails(instrumentoEncontrado, txtId, txtNombre, txtPrecio, txtFechaVenta, txtNumeroTrastes, txtNumeroCuerdas);
                 btnEliminar.Enabled = true;
             }
-            catch (Exception exception) { MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (Exception exception) { MessageBox.Show(Validaciones.MensajeDeError(exception), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
 
         private async Task EliminarAsync()
         {
+            if (instrumentoEncontrado == null)
+            {
+                MessageBox.Show("Primero busque el instrumento que desea eliminar.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             if (MessageBox.Show("¿Confirma la eliminación del instrumento mostrado?", "Confirmar", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             try
             {
@@ -50,14 +55,7 @@ namespace POCInstrumentoCuerda
                 MessageBox.Show("Instrumento eliminado.", "Operación exitosa");
                 
             }
-            catch (Exception exception) { MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
-        }
-
-        private static int ParseId(string value)
-        {
-            int id;
-            if (!int.TryParse(value, out id) || id <= 0) throw new ArgumentException("El ID debe ser un entero positivo.");
-            return id;
+            catch (Exception exception) { MessageBox.Show(Validaciones.MensajeDeError(exception), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
 
         private void label1_Click(object sender, EventArgs e)

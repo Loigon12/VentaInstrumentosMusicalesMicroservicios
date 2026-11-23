@@ -39,12 +39,12 @@ namespace POCInstrumentoCuerda
             instrumentos.DropDownItems.Add("Eliminar instrumento", null, (s, e) => new GUIEliminarInstrumentoCuerda().Show(this));
             menuStrip1.Items.Add(instrumentos);
 
-            // Se conserva la categoría visual del programa original. El microservicio
-            // actual no expone operaciones para instrumentos de viento, por lo que no
-            // se muestran acciones que aparenten funcionar sin un endpoint real.
             var viento = new ToolStripMenuItem("Instrumentos de viento");
-            var noDisponible = new ToolStripMenuItem("No disponible en esta versión del servidor") { Enabled = false };
-            viento.DropDownItems.Add(noDisponible);
+            viento.DropDownItems.Add("Adicionar instrumento", null, (s, e) => AbrirViento("Adicionar"));
+            viento.DropDownItems.Add("Listar instrumentos", null, (s, e) => AbrirViento("Listar"));
+            viento.DropDownItems.Add("Consultar instrumento", null, (s, e) => AbrirViento("Consultar"));
+            viento.DropDownItems.Add("Actualizar instrumento", null, (s, e) => AbrirViento("Actualizar"));
+            viento.DropDownItems.Add("Eliminar instrumento", null, (s, e) => AbrirViento("Eliminar"));
             menuStrip1.Items.Add(viento);
 
             var accesorios = new ToolStripMenuItem("Accesorios de cuerda");
@@ -57,6 +57,12 @@ namespace POCInstrumentoCuerda
 
             menuStrip1.BackColor = System.Drawing.Color.DarkBlue;
             menuStrip1.ForeColor = System.Drawing.Color.White;
+        }
+
+        private void AbrirViento(string operacion)
+        {
+            var ventana = new GUIVientoOperacion(operacion);
+            ventana.Show(this);
         }
 
         private void AbrirAccesorios(string operacion)

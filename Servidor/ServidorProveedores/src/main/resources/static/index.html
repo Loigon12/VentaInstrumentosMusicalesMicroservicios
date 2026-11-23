@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#111827">
+    <title>Proveedores | Venta de Instrumentos Musicales</title>
+    <link rel="stylesheet" href="./styles.css?v=3">
+    <script src="./app.js?v=5" defer></script>
+</head>
+<body>
+    <main class="app-window">
+        <header class="window-titlebar">
+            <button id="home-button" class="window-home-button" type="button" aria-label="Ir al inicio">
+                Venta de Instrumentos Musicales
+            </button>
+            <span class="window-controls" aria-hidden="true">─　□　×</span>
+        </header>
+
+        <nav class="navbar" aria-label="Navegación principal">
+            <div class="menu-wrapper">
+                <button id="providers-menu-button" class="nav-button" type="button" aria-expanded="false" aria-haspopup="true">
+                    Proveedores <span class="chevron" aria-hidden="true">▾</span>
+                </button>
+                <div id="providers-menu" class="dropdown-menu" hidden>
+                    <button type="button" data-view="crear">Adicionar proveedor</button>
+                    <button type="button" data-view="listar">Listar proveedores</button>
+                    <button type="button" data-view="consultar">Consultar proveedor</button>
+                    <button type="button" data-view="actualizar">Actualizar proveedor</button>
+                    <button type="button" data-view="eliminar">Eliminar proveedor</button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="workspace">
+            <section class="content-panel" aria-live="polite">
+                <div class="view-heading">
+                    <div>
+                        <p id="view-eyebrow" class="eyebrow">Bienvenido</p>
+                        <h1 id="view-title">Gestión de proveedores</h1>
+                        <p id="view-description" class="view-description">Administra la información de los proveedores de la tienda.</p>
+                    </div>
+                    <span class="service-badge"><span class="status-dot"></span>Servicio activo</span>
+                </div>
+
+                <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+                <section id="view-inicio" class="operation-view home-view" aria-labelledby="home-title">
+                    <div class="home-card">
+                        <div class="home-icon" aria-hidden="true">♪</div>
+                        <p class="eyebrow">Panel de administración</p>
+                        <h2 id="home-title">Proveedores</h2>
+                        <p>Desde aquí puedes registrar y administrar los proveedores vinculados a los instrumentos de la tienda.</p>
+                        <div class="home-actions">
+                            <button id="home-manage" class="button button-primary" type="button">Ver proveedores</button>
+                            <button id="home-create" class="button button-secondary" type="button">Adicionar proveedor</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="view-crear" class="operation-view" aria-labelledby="create-title" hidden>
+                    <h2 id="create-title" class="section-title">Datos del proveedor</h2>
+                    <form id="create-form">
+                        <div class="form-grid">
+                            <div class="field-group">
+                                <label for="create-codigo">Código <span class="required">*</span></label>
+                                <input id="create-codigo" name="codigo" type="number" min="1" max="2147483647" step="1" required>
+                            </div>
+                            <div class="field-group">
+                                <label for="create-nombre">Nombre <span class="required">*</span></label>
+                                <input id="create-nombre" name="nombre" type="text" maxlength="120" required>
+                            </div>
+                            <div class="field-group">
+                                <label for="create-nit">NIT <span class="required">*</span></label>
+                                <input id="create-nit" name="nit" type="text" inputmode="numeric" pattern="[1-9][0-9]*" maxlength="30" title="Ingresa un NIT entero positivo, solo con dígitos y sin iniciar en cero" required>
+                            </div>
+                            <div class="field-group">
+                                <label for="create-correo">Correo electrónico <span class="required">*</span></label>
+                                <input id="create-correo" name="correo" type="email" maxlength="150" required>
+                            </div>
+                            <div class="field-group">
+                                <label for="create-telefono">Teléfono</label>
+                                <input id="create-telefono" name="telefono" type="tel" inputmode="numeric" pattern="[0-9]{7,15}" maxlength="15" title="Usa entre 7 y 15 dígitos, sin signos ni letras">
+                            </div>
+                            <div class="field-group">
+                                <label for="create-direccion">Dirección</label>
+                                <input id="create-direccion" name="direccion" type="text" maxlength="200">
+                            </div>
+                            <div class="field-group">
+                                <label for="create-instrumento">ID del instrumento <span class="required">*</span></label>
+                                <input id="create-instrumento" name="idInstrumento" type="number" min="1" max="2147483647" step="1" required>
+                            </div>
+                        </div>
+                        <div class="button-row">
+                            <button class="button button-primary" type="submit">Adicionar</button>
+                            <button class="button button-secondary" type="reset">Limpiar</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section id="view-listar" class="operation-view" aria-labelledby="list-title" hidden>
+                    <h2 id="list-title" class="section-title">Directorio de proveedores</h2>
+                    <form id="list-search-form" class="search-row">
+                        <label class="sr-only" for="list-search-code">Código del proveedor</label>
+                        <input id="list-search-code" type="number" min="1" step="1" placeholder="Código del proveedor..." required>
+                        <button class="button button-primary" type="submit">Buscar</button>
+                        <button id="list-clear-search" class="button button-secondary" type="button">Limpiar</button>
+                        <button id="list-refresh" class="button button-secondary refresh-button" type="button">Actualizar lista</button>
+                    </form>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Código</th>
+                                    <th scope="col">Proveedor</th>
+                                    <th scope="col">NIT</th>
+                                    <th scope="col">Contacto</th>
+                                    <th scope="col">ID instrumento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="supplier-list"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="view-consultar" class="operation-view" aria-labelledby="consult-title" hidden>
+                    <h2 id="consult-title" class="section-title">Consultar un proveedor</h2>
+                    <form id="consult-form" class="lookup-form">
+                        <div class="field-group">
+                            <label for="consult-by">Buscar por</label>
+                            <select id="consult-by">
+                                <option value="codigo">Código</option>
+                                <option value="nit">NIT</option>
+                            </select>
+                        </div>
+                        <div class="field-group lookup-input">
+                            <label for="consult-value">Código o NIT</label>
+                            <input id="consult-value" type="number" min="1" step="1" placeholder="Código del proveedor" required>
+                        </div>
+                        <button class="button button-primary" type="submit">Consultar</button>
+                    </form>
+                    <div id="consult-result" class="result-area" hidden></div>
+                </section>
+
+                <section id="view-actualizar" class="operation-view" aria-labelledby="update-title" hidden>
+                    <h2 id="update-title" class="section-title">Actualizar proveedor</h2>
+                    <form id="update-lookup-form" class="lookup-form">
+                        <div class="field-group lookup-input">
+                            <label for="update-codigo-search">Código del proveedor</label>
+                            <input id="update-codigo-search" type="number" min="1" step="1" required>
+                        </div>
+                        <button class="button button-primary" type="submit">Buscar proveedor</button>
+                    </form>
+                    <form id="update-form" class="edit-form" hidden>
+                        <div class="form-grid">
+                            <div class="field-group">
+                                <label for="update-codigo">Código</label>
+                                <input id="update-codigo" name="codigo" type="number" min="1" max="2147483647" step="1" readonly>
+                            </div>
+                            <div class="field-group">
+                                <label for="update-nombre">Nombre <span class="required">*</span></label>
+                                <input id="update-nombre" name="nombre" type="text" maxlength="120" required>
+                            </div>
+                            <div class="field-group">
+                                <label for="update-nit">NIT <span class="required">*</span></label>
+                                <input id="update-nit" name="nit" type="text" inputmode="numeric" pattern="[1-9][0-9]*" maxlength="30" title="Ingresa un NIT entero positivo, solo con dígitos y sin iniciar en cero" required>
+                            </div>
+                            <div class="field-group">
+                                <label for="update-correo">Correo electrónico <span class="required">*</span></label>
+                                <input id="update-correo" name="correo" type="email" maxlength="150" required>
+                            </div>
+                            <div class="field-group">
+                                <label for="update-telefono">Teléfono</label>
+                                <input id="update-telefono" name="telefono" type="tel" inputmode="numeric" pattern="[0-9]{7,15}" maxlength="15" title="Usa entre 7 y 15 dígitos, sin signos ni letras">
+                            </div>
+                            <div class="field-group">
+                                <label for="update-direccion">Dirección</label>
+                                <input id="update-direccion" name="direccion" type="text" maxlength="200">
+                            </div>
+                            <div class="field-group">
+                                <label for="update-instrumento">ID del instrumento <span class="required">*</span></label>
+                                <input id="update-instrumento" name="idInstrumento" type="number" min="1" max="2147483647" step="1" required>
+                            </div>
+                        </div>
+                        <div class="button-row">
+                            <button class="button button-primary" type="submit">Guardar cambios</button>
+                            <button id="update-cancel" class="button button-secondary" type="button">Cancelar</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section id="view-eliminar" class="operation-view" aria-labelledby="delete-title" hidden>
+                    <h2 id="delete-title" class="section-title">Eliminar proveedor</h2>
+                    <form id="delete-lookup-form" class="lookup-form">
+                        <div class="field-group lookup-input">
+                            <label for="delete-codigo-search">Código del proveedor</label>
+                            <input id="delete-codigo-search" type="number" min="1" step="1" required>
+                        </div>
+                        <button class="button button-primary" type="submit">Buscar proveedor</button>
+                    </form>
+                    <div id="delete-result" class="result-area" hidden></div>
+                </section>
+            </section>
+        </div>
+
+        <footer class="statusbar">
+            <span><span class="status-dot"></span>Vista activa: <strong id="active-view">ADICIONAR</strong></span>
+            <span>Registros en base de datos: <strong id="supplier-count">—</strong></span>
+        </footer>
+    </main>
+</body>
+</html>

@@ -1,8 +1,11 @@
 type Query {
     instrumento(nombre: String, precioMaximo: Float): [Instrumento]
     instrumentoPorCodigo(codigo: Int!): Instrumento
+    instrumentoConAccesorios(codigo: Int!): Instrumento
     accesorio: [AccesorioCuerda]
     accesorioPorCodigo(codigo: Int!): AccesorioCuerda
+    instrumentoViento(nombre: String, precioMaximo: Float): [InstrumentoViento]
+    instrumentoVientoPorCodigo(codigo: Int!): InstrumentoViento
 }
 
 type Mutation {
@@ -12,6 +15,9 @@ type Mutation {
     addAccesorio(input: AccesorioCuerdaInput!): AccesorioCuerda
     delAccesorio(input: Int!): AccesorioCuerda
     editAccesorio(input: AccesorioCuerdaInput!): AccesorioCuerda
+    addInstrumentoViento(input: InstrumentoVientoInput!): InstrumentoViento
+    delInstrumentoViento(input: Int!): InstrumentoViento
+    editInstrumentoViento(input: InstrumentoVientoInput!): InstrumentoViento
 }
 
 input InstrumentoInput {
@@ -21,13 +27,16 @@ input InstrumentoInput {
     fechaVenta: String!
     numeroCuerdas: Int!
     numeroTrastes: Int!
+    fechaRegistro: String
 }
 
 type Instrumento {
     id: ID
+    objectId: ID
     nombre: String
     precio: Float
     fechaVenta: String
+    fechaRegistro: String
     numeroCuerdas: Int
     numeroTrastes: Int
     accesorio: [AccesorioCuerda]
@@ -40,18 +49,43 @@ input AccesorioCuerdaInput {
     precio: Float!
     marca: String!
     idInstrumento: ID!
+    fechaRegistro: String
 }
 
 type AccesorioCuerda {
     id: ID
+    objectId: ID
     nombre: String
     tipo: Tipo
     precio: Float
     marca: String
     idInstrumento: ID
+    objectIdInstrumento: ID
+    fechaRegistro: String
 }
 
 enum Tipo {
     CUERDAPULSADA,
     CUERDAFROTADA
+}
+
+input InstrumentoVientoInput {
+    id: ID!
+    nombre: String!
+    precio: Float!
+    fechaVenta: String!
+    numeroLlaves: Int!
+    tipoBoquilla: String!
+    fechaRegistro: String
+}
+
+type InstrumentoViento {
+    id: ID
+    objectId: ID
+    nombre: String
+    precio: Float
+    fechaVenta: String
+    fechaRegistro: String
+    numeroLlaves: Int
+    tipoBoquilla: String
 }

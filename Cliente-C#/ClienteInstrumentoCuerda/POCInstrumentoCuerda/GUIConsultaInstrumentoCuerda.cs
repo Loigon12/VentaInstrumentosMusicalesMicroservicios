@@ -24,7 +24,7 @@ namespace POCInstrumentoCuerda
         {
             try
             {
-                var instrumento = await GraphQLService.BuscarAsync(ParseId(txtBuscarId.Text));
+                var instrumento = await GraphQLService.BuscarAsync(Validaciones.Id(txtBuscarId.Text, "consultar un instrumento"));
                 if (instrumento == null)
                 {
                     ClearDetails();
@@ -33,7 +33,7 @@ namespace POCInstrumentoCuerda
                 }
                 ShowDetails(instrumento);
             }
-            catch (Exception exception) { MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (Exception exception) { MessageBox.Show(Validaciones.MensajeDeError(exception), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
 
         internal static void ShowDetails(Instrumento instrumento, Label id, Label nombre, Label precio, Label fecha, Label trastes, Label cuerdas)
@@ -54,13 +54,6 @@ namespace POCInstrumentoCuerda
         private void ClearDetails()
         {
             txtId.Text = txtNombre.Text = txtPrecio.Text = txtFechaVenta.Text = txtNumeroTrastes.Text = txtNumeroCuerdas.Text = "No encontrado";
-        }
-
-        private static int ParseId(string value)
-        {
-            int id;
-            if (!int.TryParse(value, out id) || id <= 0) throw new ArgumentException("El ID debe ser un entero positivo.");
-            return id;
         }
 
         private void txtPrecio_Click(object sender, EventArgs e)

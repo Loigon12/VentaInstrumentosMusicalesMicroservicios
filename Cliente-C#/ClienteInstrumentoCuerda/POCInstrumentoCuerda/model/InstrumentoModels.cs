@@ -9,6 +9,7 @@ namespace POCInstrumentoCuerda.model
         [JsonPropertyName("nombre")] public string nombre { get; set; }
         [JsonPropertyName("precio")] public double precio { get; set; }
         [JsonPropertyName("fechaVenta")] public string fechaVenta { get; set; }
+        [JsonPropertyName("fechaRegistro")] public string fechaRegistro { get; set; }
         [JsonPropertyName("numeroCuerdas")] public int numeroCuerdas { get; set; }
         [JsonPropertyName("numeroTrastes")] public int numeroTrastes { get; set; }
         [JsonPropertyName("accesorio")] public List<Accesorio> accesorio { get; set; } = new List<Accesorio>();
@@ -28,6 +29,7 @@ namespace POCInstrumentoCuerda.model
     {
         [JsonPropertyName("instrumento")] public List<Instrumento> instrumento { get; set; }
         [JsonPropertyName("instrumentoPorCodigo")] public Instrumento instrumentoPorCodigo { get; set; }
+        [JsonPropertyName("instrumentoConAccesorios")] public Instrumento instrumentoConAccesorios { get; set; }
     }
 
     public class InstrumentoMutationResponse
